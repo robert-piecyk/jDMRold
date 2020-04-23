@@ -32,6 +32,7 @@ methout <- "/Users/rashmi/basedir/DMRcaller/test"
 methpatterns(methout=methout, 
              context=c("CG","CHG","CHH"),
              chr <- c("chr1","chr2","chr3"),
+             #chr <- c("chr1","chr2","chr3","chr4"),"chr5",
              out.dir=methout, 
              WT="SRR534177")
 
