@@ -32,17 +32,29 @@ source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/methpat
 methout <- "/Users/rashmi/basedir/DMRcaller/test"
 methpatterns(methout=methout, 
              context=c("CG","CHG","CHH"),
-             chr <- c("chr1","chr2"),
+             chr <- c("chr1","chr2","chr3"),
              out.dir=methout, 
              WT="SRR534177")
 
-#df2 <- Reduce(function(x, y) {
-#  dplyr::full_join(x, y, by=c("Pattern.int","pattern"))
-#}, filelist)
-#df2 <- df2 %>% dplyr::select("Pattern.int","pattern",everything())
-#fwrite(x=df2, file=paste0(myoutput, "/", chr[i], "_pattern-freq.txt"), quote=FALSE, 
-#       row.names=FALSE, col.names=TRUE, sep="\t")
+#-----------------------------------------------------------------------------
+# Merging frequency of patterns outputs by contexts
 
+chr <- c("chr1","chr2","chr3")
+myoutput <- "/Users/rashmi/basedir/DMRcaller/test"
+for (i in 1:length(chr)){
+  pattern=paste0("^",chr[i],".*\\patterns-freq.txt$")
+  myfiles <- list.files(myoutput, pattern=pattern, full.names = TRUE)
+  filelist <- lapply(myfiles, function(x){
+    file <- fread(x)
+    return(file)
+  })
+  df2 <- Reduce(function(x, y) {
+    dplyr::full_join(x, y, by=c("Pattern.int","pattern"))
+  }, filelist)
+  df2 <- df2 %>% dplyr::select("Pattern.int","pattern",everything())
+  #fwrite(x=df2, file=paste0(myoutput, "/", chr[i], "_pattern-freq.txt"), quote=FALSE, 
+  #       row.names=FALSE, col.names=TRUE, sep="\t")
+}
 #-----------------------------------------------------------------------------
 #make heatmaps to visualize patterns
 
