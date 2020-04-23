@@ -24,9 +24,8 @@ runMethimputeRegions(Regionfiles=Regionsfolder,
                      context=c("CG","CHG","CHH"),
                      out.dir=myoutput)
 
-
-#-----------------------------------------------------------------------------
 #Extract patterns
+#-----------------------------------------------------------------------------
 
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/methpatterns.R"))
 methout <- "/Users/rashmi/basedir/DMRcaller/test"
