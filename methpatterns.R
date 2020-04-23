@@ -28,9 +28,6 @@ methpatterns <- function(methout, context, chr, out.dir, WT) {
         dplyr::inner_join(x, y, by=c("V1","V2","V3"))
       } , filelist)
       
-      #remove WT SRR534193 for now
-      #df1 <- dplyr::select(df1, -c(SRR534193))
-      
       #arranging the columns
       df_WT <- df1 %>% dplyr::select("V1","V2","V3", contains(WT), everything())
       
