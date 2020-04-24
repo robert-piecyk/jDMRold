@@ -24,9 +24,15 @@ Regionsfolder <- "/Users/rashmi/basedir/DMRcaller/PRODUCED"
 myoutput <- "/Users/rashmi/basedir/DMRcaller/test/"
 ##Folder containing Methimpute outputs 
 Methfiles <- "/Users/rashmi/basedir/DMRcaller/methimpute-out"
+
+#Run (U,M,I) 3-state call with include.intermediate=TRUE
+#update = one of c("independent","constrained").
+
 runMethimputeRegions(Regionfiles=Regionsfolder,
                      Methfiles=Methfiles,
                      context=c("CG","CHG","CHH"),
+                     include.intermediate=FALSE,
+                     probability="constrained",
                      out.dir=myoutput)
 
 #-----------------------------------------------------------------------------
