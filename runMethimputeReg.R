@@ -26,7 +26,7 @@ myoutput <- "/Users/rashmi/basedir/DMRcaller/test/"
 Methfiles <- "/Users/rashmi/basedir/DMRcaller/methimpute-out"
 
 #Run (U,M,I) 3-state call with include.intermediate=TRUE
-#update = one of c("independent","constrained").
+#probability = one of c("independent","constrained").
 
 runMethimputeRegions(Regionfiles=Regionsfolder,
                      Methfiles=Methfiles,
