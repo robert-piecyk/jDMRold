@@ -11,33 +11,39 @@ library(plyr)
 library(pheatmap)
 library(RColorBrewer)
 
-#Run Methimpute for regions
+#Step1: Run Methimpute for cytosine regions
 #-----------------------------------------------------------------------------
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/globFun.R"))
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/MethimputeReg.R"))
 
+#Input files required:
+##Folder containing Cytosine regions as Rdata files 
 Regionsfolder <- "/Users/rashmi/basedir/DMRcaller/PRODUCED"
+##Output directory
 myoutput <- "/Users/rashmi/basedir/DMRcaller/test/"
+##Folder containing Methimpute outputs 
 Methfiles <- "/Users/rashmi/basedir/DMRcaller/methimpute-out"
 runMethimputeRegions(Regionfiles=Regionsfolder,
                      Methfiles=Methfiles,
                      context=c("CG","CHG","CHH"),
                      out.dir=myoutput)
 
-#Extract patterns
+#Step2: Extract patterns
 #-----------------------------------------------------------------------------
 
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/methpatterns.R"))
+
+##Output directory
 methout <- "/Users/rashmi/basedir/DMRcaller/test"
 methpatterns(methout=methout, 
              context=c("CG","CHG","CHH"),
              chr <- c("chr1","chr2","chr3"),
-             #chr <- c("chr1","chr2","chr3","chr4"),"chr5",
+             #chr <- c("chr1","chr2","chr3","chr4","chr5"),
              out.dir=methout, 
              WT="SRR534177")
 
 #-----------------------------------------------------------------------------
-# Merging frequency of patterns outputs by contexts
+# Merging frequency of patterns outputs by contexts (OPTIONAL)
 
 chr <- c("chr1","chr2","chr3")
 myoutput <- "/Users/rashmi/basedir/DMRcaller/test"
