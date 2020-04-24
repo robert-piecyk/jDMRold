@@ -65,7 +65,7 @@ for (i in 1:length(chr)){
 }
 #-----------------------------------------------------------------------------
 #make heatmaps to visualize patterns
-
+#-----------------------------------------------------------------------------
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/methpatterns.R"))
 
 fvals <- fread("/Users/rashmi/basedir/DMRcaller/test/chr1_CG_vals.txt", header = TRUE, sep = "\t")
@@ -110,3 +110,6 @@ pheatmap(data_subset,
          clustering_method = "complete",
          annotation_row = mynew,
          color = colorRampPalette(brewer.pal(n = 3, name = "YlOrRd"))(length(breaksList)))
+
+
+
