@@ -11,6 +11,7 @@ library(plyr)
 library(pheatmap)
 library(RColorBrewer)
 
+#-----------------------------------------------------------------------------
 #Step1: Run Methimpute for cytosine regions
 #-----------------------------------------------------------------------------
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/globFun.R"))
@@ -28,6 +29,7 @@ runMethimputeRegions(Regionfiles=Regionsfolder,
                      context=c("CG","CHG","CHH"),
                      out.dir=myoutput)
 
+#-----------------------------------------------------------------------------
 #Step2: Extract patterns
 #-----------------------------------------------------------------------------
 
