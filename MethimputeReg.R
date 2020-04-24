@@ -77,7 +77,7 @@ makeRegionsImpute <- function(df, context, refRegion) {
 }
 
 #--------------------------------------------------------------------------
-makeMethimpute<-function(df, context, refRegion, out.dir, name){
+makeMethimpute<-function(df, context, refRegion, include.intermediate, probability, out.dir, name){
     methylome.data <- makeRegionsImpute(df, context, refRegion)
     quant.cutoff <- as.numeric(quantile(methylome.data$counts[,"total"], probs = c(0.96), na.rm=TRUE))
     distcor <- distanceCorrelation(methylome.data, distances=0:100)
@@ -86,13 +86,14 @@ makeMethimpute<-function(df, context, refRegion, out.dir, name){
       transDist = fit$transDist,
       count.cutoff = quant.cutoff,
       max.iter = Inf,
-      include.intermediate=FALSE)
+      include.intermediate = include.intermediate,
+      update = probability)
     methFile <- modifiedExportMethylome(model, out.dir, context, name)
     return(methFile)
 }
 
 #--------------------------------------------------------------------------
-runMethimputeRegions <- function(Methfiles, Regionfiles, context, out.dir) {
+runMethimputeRegions <- function(Methfiles, Regionfiles, context, include.intermediate, probability, out.dir) {
   Methfiles <- list.files(Methfiles, pattern='\\.txt$', full.names = TRUE)
   for (i in 1:length(Methfiles)){
     for (j in 1:length(context)){
@@ -109,6 +110,8 @@ runMethimputeRegions <- function(Methfiles, Regionfiles, context, out.dir) {
           df=Methfiles[i],
           context=context[j],
           refRegion=Regfiles[k],
+          include.intermediate=include.intermediate, 
+          probability=probability,
           out.dir=out.dir,
           name=name)
       }
