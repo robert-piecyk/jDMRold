@@ -42,10 +42,10 @@ runMethimputeRegions(Regionfiles=Regionsfolder,
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/methpatterns.R"))
 
 ##Output directory
-methout <- "/Users/rashmi/basedir/DMRcaller/test"
+methout <- "/Users/rashmi/basedir/DMRcaller/test/chr1_CG"
 methpatterns(methout=methout, 
-             context=c("CG","CHG","CHH"),
-             chr <- c("chr1","chr2","chr3"),
+             context=c("CG"),
+             chr <- c("chr1"),
              #chr <- c("chr1","chr2","chr3","chr4","chr5"),
              out.dir=methout, 
              WT="SRR534177")
@@ -74,18 +74,18 @@ for (i in 1:length(chr)){
 #-----------------------------------------------------------------------------
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/methpatterns.R"))
 
-fvals <- fread("/Users/rashmi/basedir/DMRcaller/test/chr1_CG_vals.txt", header = TRUE, sep = "\t")
-fdensity <- fread("/Users/rashmi/basedir/DMRcaller/test/chr1_CG_meth-patterns-freq.txt",header = TRUE, sep = "\t")
+fvals <- fread("/Users/rashmi/basedir/DMRcaller/test/chr1_CG/chr1_CG_vals.txt", header = TRUE, sep = "\t")
+fdensity <- fread("/Users/rashmi/basedir/DMRcaller/test/chr1_CG/chr1_CG_meth-patterns-freq.txt",header = TRUE, sep = "\t")
 samplesnames <-fread("/Users/rashmi/basedir/DMRcaller/makeRegScripts/DMRs/sample-names.txt",header = FALSE, sep = "\t")
 
 mydf <- fvals[,4:ncol(fvals)]
 
 #mean of all regions that belong to each pattern
-mydf.1 <- aggregate(. ~ Pattern.int, data = mydf, FUN = mean)
+mydf.1 <- aggregate(. ~ Pattern, data = mydf, FUN = mean)
 #replace sample name to a general name
 setnames(mydf.1, old = samplesnames$V1, new = samplesnames$V2)
 
-rownames(mydf.1) <- mydf.1$Pattern.int
+rownames(mydf.1) <- mydf.1$Pattern
 data_subset <- mydf.1[,2:(ncol(mydf.1))]
 data_subset <- t(apply(data_subset, 1, diffr))
 data_subset <- data_subset[,-c(NCOL(data_subset))]
@@ -97,12 +97,12 @@ my_hclust <- hclust(dist(data_subset), method = "complete")
 #get_clust <- cutree(tree = my_hclust, k = 5)
 #get_clust
 breaksList <- seq(from=min(data_subset), to=max(data_subset), length.out = 10)
-h <- pheatmap(data_subset)
+h <- pheatmap(data_subset, show_rownames = FALSE,)
 #ordering dataframe of density of patterns to add it as an annotation row to the heatmap 
 myrow <- rownames(data_subset[h$tree_row[["order"]],])
-fdensity1 <- fdensity[,c("Pattern.int","CG-density")]
+fdensity1 <- fdensity[,c("Pattern","CG-density")]
 fdensity1 <- data.frame(fdensity1)
-mynew <- fdensity1[match(myrow, fdensity1$Pattern.int),]
+mynew <- fdensity1[match(myrow, fdensity1$Pattern),]
 rownames(mynew) <- mynew[,1]
 mynew[,1] <- NULL
 
@@ -115,6 +115,7 @@ pheatmap(data_subset,
          #clustering_distance_cols = "euclidean", 
          clustering_method = "complete",
          annotation_row = mynew,
+         show_rownames = FALSE,
          color = colorRampPalette(brewer.pal(n = 3, name = "YlOrRd"))(length(breaksList)))
 
 
