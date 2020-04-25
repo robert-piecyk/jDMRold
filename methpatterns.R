@@ -12,7 +12,7 @@ diffr <- function(x, i=1){
 methpatterns <- function(methout, context, chr, out.dir, WT) {
   for (i in  1:length(context)){
     for (j in 1:length(chr)){
-      pattern=paste0("_1_All_", chr[j], "_",context[i] ,".txt")
+      pattern=paste0("_1_All_", chr[j], "_", context[i] ,".txt")
       cat(paste0("Running for ", chr[j], "_", context[i], "\n"), sep = "")
       myfiles <- list.files(methout, pattern=pattern, full.names = TRUE)
       
@@ -28,6 +28,7 @@ methpatterns <- function(methout, context, chr, out.dir, WT) {
         dplyr::inner_join(x, y, by=c("V1","V2","V3"))
       } , filelist)
       
+      
       #arranging the columns
       df_WT <- df1 %>% dplyr::select("V1","V2","V3", contains(WT), everything())
       
@@ -42,31 +43,33 @@ methpatterns <- function(methout, context, chr, out.dir, WT) {
           }
         }
       }
-      m <- ifelse(mymat[,5:ncol(mymat)] == -1, yes = FALSE, no = TRUE)
+      m <- ifelse(mymat[,5:ncol(mymat)] == -1, yes = 0, no = 1)
       mm <- uniquecombs(m)
-      mx <- apply(mm, MARGIN = 1, myfunc)
+      
+      #mx <- apply(mm, MARGIN = 1, myfunc)
+      mx <- apply(mm[,c(1:ncol(mm))], 1, paste, collapse="")
       mxVec <- mx[attr(mm, "index")] 
-
+      
       #get patterns
       pat <- cbind(mm, mx)
       pat <- data.frame(pat)
-      pat$pattern <- apply(pat[,c(1:ncol(pat)-1)], 1, paste, collapse="")
-      pat <- pat %>% select("mx","pattern")
+      #pat$pattern <- apply(pat[,c(1:ncol(pat)-1)], 1, paste, collapse="")
+      #pat <- pat %>% select("mx","pattern")
       
       ndf_WT <- cbind(df_WT, mxVec)
-      colnames(ndf_WT)[ncol(ndf_WT)] <- "Pattern.int"
+      colnames(ndf_WT)[ncol(ndf_WT)] <- "Pattern"
       
       tot <- nrow(mymat)
       patternCounts <- as.data.frame(table(as.factor(mxVec)), stringsAsFactors = FALSE)
       patternCounts$density <- patternCounts$Freq/tot
-      colnames(patternCounts)[1] <- "Pattern.int"
+      colnames(patternCounts)[1] <- "Pattern"
       colnames(patternCounts)[2] <- paste0(context[i],"-","Freq")
       colnames(patternCounts)[3] <- paste0(context[i],"-","density")
-      final.df <- merge(patternCounts, pat, by.x="Pattern.int", by.y="mx")
+      #final.df <- merge(patternCounts, pat, by.x="Pattern.int", by.y="mx")
       #writing out the matrix
       fwrite(x=ndf_WT, file=paste0(out.dir, "/", chr[j], "_", context[i],"_vals.txt"), quote=FALSE, 
              row.names=FALSE, col.names=TRUE, sep="\t")
-      fwrite(x=final.df, file=paste0(out.dir, "/", chr[j], "_", context[i],"_meth-patterns-freq.txt"), 
+      fwrite(x=patternCounts, file=paste0(out.dir, "/", chr[j], "_", context[i],"_meth-patterns-freq.txt"), 
              quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
     }
   }
