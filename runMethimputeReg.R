@@ -51,7 +51,7 @@ methpatterns(methout=methout,
              WT="SRR534177")
 
 #-----------------------------------------------------------------------------
-#make heatmaps to visualize patterns
+#Step3: make heatmaps to visualize patterns
 #-----------------------------------------------------------------------------
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/methpatterns.R"))
 
