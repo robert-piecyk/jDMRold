@@ -67,6 +67,8 @@ methpatterns <- function(methout, context, chr, out.dir, WT) {
       colnames(patternCounts)[3] <- paste0(context[i],"-","density")
       #final.df <- merge(patternCounts, pat, by.x="Pattern.int", by.y="mx")
       #writing out the matrix
+      fwrite(x=mymat, file=paste0(out.dir, "/", chr[j], "_", context[i],"_mat.txt"), quote=FALSE, 
+             row.names=FALSE, col.names=TRUE, sep="\t")
       fwrite(x=ndf_WT, file=paste0(out.dir, "/", chr[j], "_", context[i],"_vals.txt"), quote=FALSE, 
              row.names=FALSE, col.names=TRUE, sep="\t")
       fwrite(x=patternCounts, file=paste0(out.dir, "/", chr[j], "_", context[i],"_meth-patterns-freq.txt"), 
