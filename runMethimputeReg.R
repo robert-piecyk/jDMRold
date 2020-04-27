@@ -74,9 +74,11 @@ for (i in 1:length(chr)){
 #-----------------------------------------------------------------------------
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/methpatterns.R"))
 
+fmat <- fread("/Users/rashmi/basedir/DMRcaller/test/chr1_CG/chr1_CG_mat.txt", header = TRUE, sep = "\t")
 fvals <- fread("/Users/rashmi/basedir/DMRcaller/test/chr1_CG/chr1_CG_vals.txt", header = TRUE, sep = "\t")
 fdensity <- fread("/Users/rashmi/basedir/DMRcaller/test/chr1_CG/chr1_CG_meth-patterns-freq.txt",header = TRUE, sep = "\t")
 samplesnames <-fread("/Users/rashmi/basedir/DMRcaller/makeRegScripts/DMRs/sample-names.txt",header = FALSE, sep = "\t")
+output.dir <-"/Users/rashmi/basedir/DMRcaller/test"
 
 mydf <- fvals[,4:ncol(fvals)]
 
@@ -97,16 +99,19 @@ my_hclust <- hclust(dist(data_subset), method = "complete")
 #get_clust <- cutree(tree = my_hclust, k = 5)
 #get_clust
 breaksList <- seq(from=min(data_subset), to=max(data_subset), length.out = 10)
-h <- pheatmap(data_subset, show_rownames = FALSE,)
+h0 <- pheatmap(data_subset, show_rownames = FALSE)
 #ordering dataframe of density of patterns to add it as an annotation row to the heatmap 
-myrow <- rownames(data_subset[h$tree_row[["order"]],])
+myrow <- rownames(data_subset[h0$tree_row[["order"]],])
 fdensity1 <- fdensity[,c("Pattern","CG-density")]
 fdensity1 <- data.frame(fdensity1)
 mynew <- fdensity1[match(myrow, fdensity1$Pattern),]
 rownames(mynew) <- mynew[,1]
 mynew[,1] <- NULL
-
-pheatmap(data_subset, 
+pdf(paste(output.dir, "/chr1_CG_val.pdf", sep=""), 
+    #colormodel = 'cmyk', 
+    width = 8, 
+    height = 14)
+h <- pheatmap(data_subset, 
          cluster_cols=TRUE,
          #gaps_col = 1,
          breaks=breaksList,
@@ -117,6 +122,33 @@ pheatmap(data_subset,
          annotation_row = mynew,
          show_rownames = FALSE,
          color = colorRampPalette(brewer.pal(n = 3, name = "YlOrRd"))(length(breaksList)))
+print (h)
+dev.off()
+#--------------------------------------------------------------
+#binary matrix
+m <- ifelse(fmat[,5:(ncol(fmat)-1)] == -1, yes = 0, no = 1)
+mm <- uniquecombs(m)
+mx <- apply(mm[,c(1:ncol(mm))], 1, paste, collapse="")
+mxVec <- mx[attr(mm, "index")] 
+datas1 <- cbind(mm, mx)
+datas1 <- data.frame(datas1)
+colnames(datas1)[ncol(datas1)] <- "Pattern"
+data_subset1 <- datas1[,-c(NCOL(datas1))]
+data_subset1 <- apply(data_subset1, 2, as.numeric)
+rownames(data_subset1) <- datas1$Pattern
+data_subset1 <- data_subset1[order(match(rownames(data_subset1), myrow)),]
+breaksList1 <- seq(from=min(data_subset1), to=max(data_subset1), length.out = 2)
+pdf(paste(output.dir, "/chr1_CG_binary.pdf", sep=""), 
+    #colormodel = 'cmyk', 
+    width = 8, 
+    height = 14)
+h1 <- pheatmap(data_subset1, 
+               cluster_cols=FALSE,
+               cluster_rows=FALSE,
+               show_rownames=FALSE,
+               legend_breaks = c(0,1),
+               color = colorRampPalette(brewer.pal(n = 3, name = "YlOrRd"))(length(breaksList1)))
 
 
-
+print(h1)
+dev.off()
