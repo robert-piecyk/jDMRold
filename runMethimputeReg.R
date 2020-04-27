@@ -51,25 +51,6 @@ methpatterns(methout=methout,
              WT="SRR534177")
 
 #-----------------------------------------------------------------------------
-# Merging frequency of patterns by contexts into one dataframe (OPTIONAL)
-
-chr <- c("chr1","chr2","chr3")
-myoutput <- "/Users/rashmi/basedir/DMRcaller/test"
-for (i in 1:length(chr)){
-  pattern=paste0("^",chr[i],".*\\patterns-freq.txt$")
-  myfiles <- list.files(myoutput, pattern=pattern, full.names = TRUE)
-  filelist <- lapply(myfiles, function(x){
-    file <- fread(x)
-    return(file)
-  })
-  df2 <- Reduce(function(x, y) {
-    dplyr::full_join(x, y, by=c("Pattern.int","pattern"))
-  }, filelist)
-  df2 <- df2 %>% dplyr::select("Pattern.int","pattern",everything())
-  #fwrite(x=df2, file=paste0(myoutput, "/", chr[i], "_pattern-freq.txt"), quote=FALSE, 
-  #       row.names=FALSE, col.names=TRUE, sep="\t")
-}
-#-----------------------------------------------------------------------------
 #make heatmaps to visualize patterns
 #-----------------------------------------------------------------------------
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/methpatterns.R"))
