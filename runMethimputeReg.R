@@ -19,7 +19,7 @@ source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/Methimp
 
 #Input files required:
 ##Folder containing Cytosine regions as Rdata files 
-Regionsfolder <- "/Users/rashmi/basedir/DMRcaller/PRODUCED"
+Regionsfolder <- "/Users/rashmi/basedir/DMRcaller/PRODUCED/min.C_5"
 ##Output directory
 myoutput <- "/Users/rashmi/basedir/DMRcaller/test/"
 ##Folder containing Methimpute outputs 
@@ -107,7 +107,7 @@ rownames(mynew) <- mynew[,1]
 mynew[,1] <- NULL
 
 pheatmap(data_subset, 
-         cluster_cols=FALSE,
+         cluster_cols=TRUE,
          #gaps_col = 1,
          breaks=breaksList,
          cluster_rows = my_hclust,
