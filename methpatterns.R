@@ -56,8 +56,10 @@ methpatterns <- function(methout, context, chr, out.dir, WT) {
       #pat$pattern <- apply(pat[,c(1:ncol(pat)-1)], 1, paste, collapse="")
       #pat <- pat %>% select("mx","pattern")
       
-      ndf_WT <- cbind(df_WT, mxVec)
-      colnames(ndf_WT)[ncol(ndf_WT)] <- "Pattern"
+      df_WT.1 <- cbind(df_WT, mxVec)
+      mymat.1 <- cbind(mymat, mxVec)
+      colnames(df_WT.1)[ncol(df_WT.1)] <- "Pattern"
+      colnames(mymat.1)[ncol(mymat.1)] <- "Pattern"
       
       tot <- nrow(mymat)
       patternCounts <- as.data.frame(table(as.factor(mxVec)), stringsAsFactors = FALSE)
@@ -67,9 +69,9 @@ methpatterns <- function(methout, context, chr, out.dir, WT) {
       colnames(patternCounts)[3] <- paste0(context[i],"-","density")
       #final.df <- merge(patternCounts, pat, by.x="Pattern.int", by.y="mx")
       #writing out the matrix
-      fwrite(x=mymat, file=paste0(out.dir, "/", chr[j], "_", context[i],"_mat.txt"), quote=FALSE, 
+      fwrite(x=mymat.1, file=paste0(out.dir, "/", chr[j], "_", context[i],"_mat.txt"), quote=FALSE, 
              row.names=FALSE, col.names=TRUE, sep="\t")
-      fwrite(x=ndf_WT, file=paste0(out.dir, "/", chr[j], "_", context[i],"_vals.txt"), quote=FALSE, 
+      fwrite(x=df_WT.1, file=paste0(out.dir, "/", chr[j], "_", context[i],"_vals.txt"), quote=FALSE, 
              row.names=FALSE, col.names=TRUE, sep="\t")
       fwrite(x=patternCounts, file=paste0(out.dir, "/", chr[j], "_", context[i],"_meth-patterns-freq.txt"), 
              quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
