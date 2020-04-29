@@ -16,9 +16,9 @@ source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/Methimp
 #Input files required:
 #-----------------------------------------------------------------------------
 ##Folder containing Cytosine regions as Rdata files 
-Regionsfolder <- "/Users/rashmi/basedir/DMRcaller/PRODUCED/min.C_5"
+Regionsfolder <- "/Users/rashmi/basedir/DMRcaller/PRODUCED/min.C_6"
 ##Output directory
-myoutput <- "/Users/rashmi/basedir/DMRcaller/test/"
+myoutput <- "/Users/rashmi/basedir/DMRcaller/"
 ##Folder containing Methimpute outputs 
 Methfiles <- "/Users/rashmi/basedir/DMRcaller/methimpute-out"
 #-----------------------------------------------------------------------------
@@ -28,6 +28,7 @@ Methfiles <- "/Users/rashmi/basedir/DMRcaller/methimpute-out"
 runMethimputeRegions(Regionfiles=Regionsfolder,
                      Methfiles=Methfiles,
                      context=c("CG","CHG","CHH"),
+                     fit.plot=FALSE,
                      include.intermediate=FALSE,
                      probability="constrained",
                      out.dir=myoutput)
