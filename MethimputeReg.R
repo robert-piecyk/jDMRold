@@ -94,7 +94,7 @@ modifiedExportMethylome <- function(model, out.dir, context, name) {
     #------------------------------------------------------------------
     # convert full string into M/U/I
     final_dataset <- statusStringCheck(final_dataset)
-    #-------------------------------------------------------------
+    #------------------------------------------------------------------
     # take 4 digit of decimal value posteriorMax column
     final_dataset$posteriorMax <-floorDec(as.numeric(as.character(final_dataset$posteriorMax)),5)
     final_dataset$rc.meth.lvl <- floorDec(as.numeric(as.character(final_dataset$rc.meth.lvl)),5)
