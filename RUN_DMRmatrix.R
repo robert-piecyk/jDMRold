@@ -1,0 +1,31 @@
+rm(list=ls())
+
+library(data.table)
+library(dplyr)
+library(rtracklayer)
+library(stringr)
+
+source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/makeDMRmatrix.R"))
+
+context <- c("CG","CHG","CHH")
+chr <- c("chr1","chr2","chr3","chr4","chr5")
+samplefile <- "/Users/rashmi/basedir/DMRcaller/test/listFiles.fn"
+out.dir <- "/Users/rashmi/basedir/DMRcaller/test/DMRs/"
+
+# make binary & rc.meth.lvl matrix
+makeDMRmatrix(context=context,
+              chr=chr,
+              samplefile=samplefile,
+              out.dir=out.dir)
+
+#--------------------------------------------
+source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/filterDMRmatrix.R"))
+
+context <- c("CG","CHG","CHH")
+chr <- c("chr1","chr2","chr3","chr4","chr5")
+out.dir <- "/Users/rashmi/basedir/DMRcaller/test/DMRs/"
+# Only for control/treatment data
+filterDMRmatrix(context=context,
+         chr=chr,
+         out.dir=out.dir)
+
