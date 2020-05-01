@@ -9,6 +9,8 @@ source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/makeDMR
 
 context <- c("CG","CHG","CHH")
 chr <- c("chr1","chr2","chr3","chr4","chr5")
+
+# Filelist can be easily created in linux by typing : ls -d $PWD/whateverfolder/*.txt
 samplefile <- "/Users/rashmi/basedir/DMRcaller/test/listFiles.fn"
 out.dir <- "/Users/rashmi/basedir/DMRcaller/test/DMRs/"
 
