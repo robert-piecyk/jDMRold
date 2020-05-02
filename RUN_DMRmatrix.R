@@ -6,7 +6,7 @@ library(rtracklayer)
 library(stringr)
 
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/makeDMRmatrix.R"))
-
+#For both population level and  pairwise control-Treatment data
 context <- c("CG","CHG","CHH")
 chr <- c("chr1","chr2","chr3","chr4","chr5")
 
@@ -23,6 +23,7 @@ makeDMRmatrix(context=context,
 #--------------------------------------------
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/filterDMRmatrix.R"))
 
+#Only for pairwise control-Treatment data
 context <- c("CG","CHG","CHH")
 chr <- c("chr1","chr2","chr3","chr4","chr5")
 out.dir <- "/Users/rashmi/basedir/DMRcaller/test/DMRs/"

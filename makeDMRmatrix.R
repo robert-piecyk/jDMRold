@@ -45,10 +45,12 @@ makeDMRmatrix <- function(context, chr, samplefile, out.dir) {
       #(column 6) state-calls and (column 7) rc.meth.lvl
       mydf <- merge.cols(colm=c(6, 7))
       
-      # extract the pattern from the list containing the state calls
+      # list containing the state calls
       status.collect <- mydf[[1]]
+      # list containing the rcmethlvls
       rc.methlevel.collect <- mydf[[2]]
       
+      # removing unchanged patterns
       index <- which(rowSums(status.collect[,(4:NCOL(status.collect))]) != 0 & 
                        rowSums(status.collect[,(4:NCOL(status.collect))]) != (NCOL(status.collect)-3))
       
