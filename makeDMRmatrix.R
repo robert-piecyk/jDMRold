@@ -11,6 +11,12 @@ makeDMRmatrix <- function(context, chr, samplefile, out.dir) {
       samplelist <- fread(samplefile, header=T)
       extractp <- paste0(chr[j],"_",context[i])
       samplelist <- samplelist[grep(extractp, samplelist$file),]
+      
+      if (!is.null(samplelist$replicate)) {
+        samplelist$name <- paste0(samplelist$sample,"_", samplelist$replicate)
+      } else {
+      samplelist$name <- samplelist$sample }
+      
       print (samplelist$file)
       
       # (column 6) state calls and (column 7) rc.meth.lvl for all samples and make 2 matrices
@@ -33,7 +39,7 @@ makeDMRmatrix <- function(context, chr, samplefile, out.dir) {
           for (a in 4:length(colnames(df))) {
             for (n in 1:length(samplelist$sample)) {
               if (colnames(df)[a] == basename(samplelist$file)[n]) {
-                colnames(df)[a] = samplelist$sample[n]
+                colnames(df)[a] = samplelist$name[n]
               }
             }
           }

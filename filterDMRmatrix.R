@@ -1,3 +1,10 @@
+#rm(list=ls())
+#context <- c("CG","CHG","CHH")
+#chr <- c("chr1","chr2","chr3","chr4","chr5")
+#out.dir <- "/Users/rashmi/basedir/DMRcaller/test/DMRs/"
+#i=1
+#j=1
+
 
 filterDMRmatrix <- function(context, chr, out.dir) {
 
