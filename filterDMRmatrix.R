@@ -1,12 +1,5 @@
-#rm(list=ls())
-#context <- c("CG","CHG","CHH")
-#chr <- c("chr1","chr2","chr3","chr4","chr5")
-#out.dir <- "/Users/rashmi/basedir/DMRcaller/test/DMRs/"
-#i=1
-#j=1
 
-
-filterDMRmatrix <- function(context, chr, out.dir) {
+filterDMRmatrix <- function(context, chr, replicate.consensus, out.dir) {
 
   for (i in  1:length(context)){
     for (j in 1:length(chr)){
@@ -20,14 +13,16 @@ filterDMRmatrix <- function(context, chr, out.dir) {
       sampleinfo <- data.frame(do.call(rbind, strsplit(as.character(mycol),"_")))
       colnames(sampleinfo) <- c("sample", "replicate")
       
-      # Retaining replicate consensus among samples
+      # Retaining samples based on replicate.consensus
       dt <- data.frame()
       q <- lapply(1:NROW(status.collect), function(x){
         mypattern <- unlist(status.collect[x, 4:NCOL(status.collect)])
         df.bind <- cbind(sampleinfo, mypattern)
-      
         for (m in unique(df.bind$sample)){
-          if (length(unique(df.bind$mypattern[df.bind$sample==m]))==1)
+          rval <- replicate.consensus * length(df.bind$mypattern[df.bind$sample==m])
+          pattern.vals  <- df.bind$mypattern[df.bind$sample==m]
+          tt <- table(pattern.vals)
+          if (max(tt) >= rval)
             df.bind$count[df.bind$sample==m] <- 0
           else
             df.bind$count[df.bind$sample==m] <- 1
