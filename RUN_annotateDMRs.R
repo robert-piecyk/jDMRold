@@ -25,7 +25,6 @@ annotateDMRs(gff=c(gff.AT, gff.TE, gff.pr),
              annotation=c("gene","promoters","TE"),
              input=wd)
 
-
 #------------------------------------------------------------------------------------
 # Plot the output of DMR-counts.txt
 file <- fread("/Users/rashmi/basedir/DMRcaller/test/DMRs/clean-DMRs/DMR-counts.txt", header=TRUE)

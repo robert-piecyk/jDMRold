@@ -80,7 +80,7 @@ annotateDMRs <- function(annotation, gff, input) {
     out.1 <- out[which(sapply(strsplit(out$type,','), uniqueN)==1),]
     
     # multiple annotation overlaps
-    mx <- out[which(sapply(strsplit(out$type,','), uniqueN)==2),]
+    mx <- out[which(sapply(strsplit(out$type,','), uniqueN)>=2),]
     
     if (nrow(d) != 0){
       for (k in seq_along(annotation)){
