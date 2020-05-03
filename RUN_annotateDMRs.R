@@ -27,6 +27,7 @@ annotateDMRs(gff=c(gff.AT, gff.TE, gff.pr),
 
 
 #------------------------------------------------------------------------------------
+# Plot the output of DMR-counts.txt
 file <- fread("/Users/rashmi/basedir/DMRcaller/test/DMRs/clean-DMRs/DMR-counts.txt", header=TRUE)
 file <- separate(data = file, col = sample, into = c("chr", "context"))
 mydf <- reshape2::melt(file, measure.vars=c("all","gene", "promoters", "TE", "multiple.annotations"))
