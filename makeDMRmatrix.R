@@ -56,13 +56,6 @@ makeDMRmatrix <- function(context, chr, samplefile, out.dir) {
       # list containing the rcmethlvls
       rc.methlevel.collect <- mydf[[2]]
       
-      # removing unchanged patterns
-      index <- which(rowSums(status.collect[,(4:NCOL(status.collect))]) != 0 & 
-                       rowSums(status.collect[,(4:NCOL(status.collect))]) != (NCOL(status.collect)-3))
-      
-      status.collect <- status.collect[index,]
-      rc.methlevel.collect <- rc.methlevel.collect[index,]
-      
       names(status.collect)[1] <- "seqnames"
       names(status.collect)[2] <- "start"
       names(status.collect)[3] <- "end"
