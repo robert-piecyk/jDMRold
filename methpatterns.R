@@ -104,3 +104,15 @@ methpatterns <- function(methout, context, chr, out.dir, WT) {
            row.names=FALSE, col.names=TRUE, sep="\t")
   }
 }
+
+
+filter.methpatterns <- function(val.matrix, freq, density.cutoff, out.dir){
+  from <- as.numeric(unlist(strsplit(density.cutoff,":")))[1]
+  to <- as.numeric(unlist(strsplit(density.cutoff,":")))[2]
+  f1 <- fread(freq, header=TRUE, colClasses=c("Pattern"="character"))
+  f2 <- fread(val.matrix, header=TRUE, colClasses=c("Pattern"="character"), stringsAsFactors = FALSE )
+  mypats <- f1[which(f1$density >= from & f1$density <= to),]
+  mydf <- f2[f2$Pattern %in% mypats$Pattern,]
+  fwrite(x=mydf, file=paste0(out.dir, "/vals_filtered.txt"), 
+         quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
+}

@@ -18,3 +18,14 @@ methpatterns(methout=methout,
              chr <- c("chr1","chr2","chr3","chr4","chr5"),
              out.dir=methout, 
              WT="SRR534177")
+
+#-----------------------------------------------------------------------------
+# Filter low density patterns
+#-----------------------------------------------------------------------------
+
+freq <- "/Users/rashmi/basedir/DMRcaller/test/chr1_CG/CG_All_methpatterns-freq.txt"
+val.matrix <- "/Users/rashmi/basedir/DMRcaller/test/chr1_CG/CG_All_vals.txt"
+filter.methpatterns(val.matrix=val.matrix,
+                    freq=freq,
+                    density.cutoff="0.0001:0.7",
+                    out.dir="/Users/rashmi/basedir/DMRcaller/test/chr1_CG")
