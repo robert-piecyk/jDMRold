@@ -27,5 +27,6 @@ freq <- "/Users/rashmi/basedir/DMRcaller/test/chr1_CG/CG_All_methpatterns-freq.t
 val.matrix <- "/Users/rashmi/basedir/DMRcaller/test/chr1_CG/CG_All_vals.txt"
 filter.methpatterns(val.matrix=val.matrix,
                     freq=freq,
-                    density.cutoff="0.0001:0.7",
+                    #density.cutoff="0.0001:0.7",
+                    density.cutoff=NULL,
                     out.dir="/Users/rashmi/basedir/DMRcaller/test/chr1_CG")

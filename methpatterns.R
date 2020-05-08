@@ -107,11 +107,18 @@ methpatterns <- function(methout, context, chr, out.dir, WT) {
 
 
 filter.methpatterns <- function(val.matrix, freq, density.cutoff, out.dir){
-  from <- as.numeric(unlist(strsplit(density.cutoff,":")))[1]
-  to <- as.numeric(unlist(strsplit(density.cutoff,":")))[2]
   f1 <- fread(freq, header=TRUE, colClasses=c("Pattern"="character"))
   f2 <- fread(val.matrix, header=TRUE, colClasses=c("Pattern"="character"), stringsAsFactors = FALSE )
-  mypats <- f1[which(f1$density >= from & f1$density <= to),]
+  
+  if (!is.null=density.cutoff){
+    from <- as.numeric(unlist(strsplit(density.cutoff,":")))[1]
+    to <- as.numeric(unlist(strsplit(density.cutoff,":")))[2]
+    mypats <- f1[which(f1$density >= from & f1$density <= to),]
+  } else {
+    cat("Applying quantile cutoff...")
+    quant.cutoff <- as.numeric(quantile(f1$Freq, probs = c(0.96), na.rm=TRUE))
+    mypats <- f1[which(f1$Freq >= quant.cutoff),]
+  }
   mydf <- f2[f2$Pattern %in% mypats$Pattern,]
   fwrite(x=mydf, file=paste0(out.dir, "/vals_filtered.txt"), 
          quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
