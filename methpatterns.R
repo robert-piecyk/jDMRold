@@ -110,7 +110,7 @@ filter.methpatterns <- function(val.matrix, freq, density.cutoff, out.dir){
   f1 <- fread(freq, header=TRUE, colClasses=c("Pattern"="character"))
   f2 <- fread(val.matrix, header=TRUE, colClasses=c("Pattern"="character"), stringsAsFactors = FALSE )
   
-  if (!is.null=density.cutoff){
+  if (!is.null(density.cutoff)){
     from <- as.numeric(unlist(strsplit(density.cutoff,":")))[1]
     to <- as.numeric(unlist(strsplit(density.cutoff,":")))[2]
     mypats <- f1[which(f1$density >= from & f1$density <= to),]
