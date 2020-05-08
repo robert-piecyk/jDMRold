@@ -1,28 +1,47 @@
 
-makeDMRmatrix <- function(context, chr, samplefile, out.dir) {
+makeDMRmatrix <- function(context, chr, samplefile, input.dir, out.dir) {
   
   mylist <- list()
   
+  # Read the sample file with filnames
+  samplelist <- fread(samplefile, header=T)
+  
   for (i in  1:length(context)){
     for (j in 1:length(chr)){
-      cat(paste0("Running for ", chr[j], "_", context[i], "\n"), sep = "")
+      cat(paste0("Extracting region files for ", chr[j], " ", context[i], "\n"), sep = "")
+      extractflist <- list.files(input.dir, 
+                             pattern=paste0(chr[j],"_",context[i],".txt"), 
+                             full.names=TRUE)
       
-      # extract samples in listFiles.fn
-      samplelist <- fread(samplefile, header=T)
-      extractp <- paste0(chr[j],"_",context[i])
-      samplelist <- samplelist[grep(extractp, samplelist$file),]
+      # Matching filenames
+      samplelist$full.path <- NA
+      for (a in 1:length(extractflist)) {
+        for (n in 1:length(samplelist$file)) {
+          pat1 <- gsub(".*methylome_|\\_All.txt$", "", samplelist$file[n])
+          pat2 <- gsub(paste0("_",chr[j],"_",context[i],".txt"), "", basename(extractflist[a]))
+          if (pat1 == pat2) {
+            samplelist$full.path[n] <- extractflist[a]
+          }
+        }
+      }
+  
+      cat("\n")
+      #extractp <- paste0(chr[j],"_",context[i])
+      #samplelist <- samplelist[grep(input.dir, samplelist$file[i]),]
       
       if (!is.null(samplelist$replicate)) {
+        cat(paste0("Input data with replicates....creating unique sample names\n"), sep = "")
         samplelist$name <- paste0(samplelist$sample,"_", samplelist$replicate)
       } else {
-      samplelist$name <- samplelist$sample }
+        samplelist$name <- samplelist$sample }
       
-      print (samplelist$file)
+      print (samplelist[,c("file","full.path","name")])
       
+      cat(paste0("Now, constructing DMR matrix\n"), sep = "")
       # (column 6) state calls and (column 7) rc.meth.lvl for all samples and make 2 matrices
       merge.cols <- function(colm) {
         for (l in 1:length(colm)){
-          extract <- lapply(samplelist$file, function(k){
+          extract <- lapply(samplelist$full.path, function(k){
             f <- fread(k, header=FALSE, skip=1, 
                        select=c(1, 2, 3, colm[l]))
             if (colm[l]==6) {
@@ -37,8 +56,8 @@ makeDMRmatrix <- function(context, chr, samplefile, out.dir) {
           
           # renaming file name with a sample name
           for (a in 4:length(colnames(df))) {
-            for (n in 1:length(samplelist$sample)) {
-              if (colnames(df)[a] == basename(samplelist$file)[n]) {
+            for (n in 1:length(samplelist$name)) {
+              if (colnames(df)[a] == basename(samplelist$full.path)[n]) {
                 colnames(df)[a] = samplelist$name[n]
               }
             }
@@ -64,9 +83,11 @@ makeDMRmatrix <- function(context, chr, samplefile, out.dir) {
       names(rc.methlevel.collect)[2] <- "start"
       names(rc.methlevel.collect)[3] <- "end"
       
-      fwrite(x=status.collect, file=paste0(out.dir, chr[j], "_", context[i],"_state-calls.txt"),
+      cat("\n")
+      cat(paste0("Writing output....\n"), sep = "")
+      fwrite(x=status.collect, file=paste0(out.dir,"/", chr[j], "_", context[i],"_state-calls.txt"),
              quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
-      fwrite(x=rc.methlevel.collect, file=paste0(out.dir, chr[j], "_", context[i],"_rcmethlvl.txt"), 
+      fwrite(x=rc.methlevel.collect, file=paste0(out.dir,"/", chr[j], "_", context[i],"_rcmethlvl.txt"), 
              quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
     }
   }
