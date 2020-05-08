@@ -10,10 +10,19 @@ diffr <- function(x, i=1){
 }
 
 methpatterns <- function(methout, context, chr, out.dir, WT) {
+  
+  val.mat <- list()
+  bin.mat <- list()
+  freq.tbl <- list()
+  tot <- 0
+  
   for (i in  1:length(context)){
+    cat(paste0("Running for context ", context[i], " .........\n"), sep="")
+    cat("\n")
+    
     for (j in 1:length(chr)){
       pattern=paste0("_1_All_", chr[j], "_", context[i] ,".txt")
-      cat(paste0("Running for ", chr[j], "_", context[i], "\n"), sep = "")
+      cat(paste0("Merging samples into one dataframe for ", chr[j] , "\n"), sep = "")
       myfiles <- list.files(methout, pattern=pattern, full.names = TRUE)
       
       filelist <- lapply(myfiles, function(i){
@@ -61,20 +70,37 @@ methpatterns <- function(methout, context, chr, out.dir, WT) {
       colnames(df_WT.1)[ncol(df_WT.1)] <- "Pattern"
       colnames(mymat.1)[ncol(mymat.1)] <- "Pattern"
       
-      tot <- nrow(mymat)
+      tot <- tot + nrow(mymat[i])
+      
       patternCounts <- as.data.frame(table(as.factor(mxVec)), stringsAsFactors = FALSE)
-      patternCounts$density <- patternCounts$Freq/tot
+      
       colnames(patternCounts)[1] <- "Pattern"
-      colnames(patternCounts)[2] <- paste0(context[i],"-","Freq")
-      colnames(patternCounts)[3] <- paste0(context[i],"-","density")
+      
+      val.mat[[j]] <- data.frame(df_WT.1)
+      bin.mat[[j]] <- data.frame(mymat.1)
+      freq.tbl[[j]] <- data.frame(patternCounts)
+      
       #final.df <- merge(patternCounts, pat, by.x="Pattern.int", by.y="mx")
-      #writing out the matrix
-      fwrite(x=mymat.1, file=paste0(out.dir, "/", chr[j], "_", context[i],"_mat.txt"), quote=FALSE, 
-             row.names=FALSE, col.names=TRUE, sep="\t")
-      fwrite(x=df_WT.1, file=paste0(out.dir, "/", chr[j], "_", context[i],"_vals.txt"), quote=FALSE, 
-             row.names=FALSE, col.names=TRUE, sep="\t")
-      fwrite(x=patternCounts, file=paste0(out.dir, "/", chr[j], "_", context[i],"_meth-patterns-freq.txt"), 
-             quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
     }
+    
+    cat("Now, merging dataframes for each chromosome into one file........\n")
+    cat("\n")
+    
+    print (paste0("Total regions/rows for all chromosomes = ", tot, sep=""))
+    
+    val.mat.final <- rbindlist(val.mat)
+    bin.mat.final <- rbindlist(bin.mat)
+    
+    freq.tbl.final <- rbindlist(freq.tbl)
+    freq.tbl.final.1 <- aggregate(. ~ Pattern, data=freq.tbl.final, FUN=sum)
+    freq.tbl.final.1$density <- freq.tbl.final.1$Freq/tot
+    
+    #writing out the matrix
+    fwrite(x=val.mat.final, file=paste0(out.dir, "/", context[i],"_All_vals.txt"), quote=FALSE, 
+           row.names=FALSE, col.names=TRUE, sep="\t")
+    fwrite(x=bin.mat.final, file=paste0(out.dir, "/", context[i],"_All_mat.txt"), quote=FALSE, 
+           row.names=FALSE, col.names=TRUE, sep="\t")
+    fwrite(x=freq.tbl.final.1, file=paste0(out.dir, "/", context[i],"_All_methpatterns-freq.txt"), quote=FALSE, 
+           row.names=FALSE, col.names=TRUE, sep="\t")
   }
 }
