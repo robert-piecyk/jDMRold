@@ -100,7 +100,7 @@ modifiedExportMethylome <- function(model, out.dir, context, name) {
     final_dataset$rc.meth.lvl <- floorDec(as.numeric(as.character(final_dataset$rc.meth.lvl)),5)
     final_dataset$seqnames <- as.character(final_dataset$seqnames)
 
-    saveFile <- paste0(out.dir, name, "_", context, ".txt")
+    saveFile <- paste0(out.dir, "/", name, "_", context, ".txt")
     fwrite(final_dataset, file = saveFile, quote = FALSE, sep = '\t', row.names = FALSE, col.names = TRUE)
     return (final_dataset)
 }
@@ -187,10 +187,11 @@ makeMethimpute<-function(df, context, fit.plot, fit.name, refRegion, include.int
 #--------------------------------------------------------------------------
 
 runMethimputeRegions <- function(Methfiles, Regionfiles, context, include.intermediate, probability, fit.plot, out.dir) {
-  Methfiles <- list.files(Methfiles, pattern='\\.txt$', full.names = TRUE)
-  for (i in 1:length(Methfiles)){
+  filelist <- fread(Methfiles, header=TRUE)
+  #Methfiles <- list.files(Methfiles, pattern='\\.txt$', full.names = TRUE)
+  for (i in 1:length(filelist$file)){
     for (j in 1:length(context)){
-      methfn <- gsub(".*methylome_|\\.txt$", "", Methfiles[i])
+      methfn <- gsub(".*methylome_|\\_All.txt$", "", filelist$file[i])
       Regfiles <- list.files(Regionfiles, pattern=paste0("_", context[j], ".Rdata"), full.names = TRUE)
       for (k in 1:length(Regfiles)){
 
@@ -198,9 +199,9 @@ runMethimputeRegions <- function(Methfiles, Regionfiles, context, include.interm
         chr <- gsub(paste0("_", context[j]), "", tmp)
 
         name <- paste0(methfn, "_", chr)
-        cat(paste0("Running for ", methfn, " ", context[j], " ", chr,"\n"), sep = "")
+        cat(paste0("Running file ", methfn, " for context ", context[j], " and ", chr,"\n"), sep = "")
         makeMethimpute(
-          df=Methfiles[i],
+          df=filelist$file[i],
           context=context[j],
           refRegion=Regfiles[k],
           fit.plot=fit.plot,
