@@ -42,9 +42,9 @@ methpatterns <- function(methout, context, chr, out.dir, WT) {
       df_WT <- df1 %>% dplyr::select("V1","V2","V3", contains(WT), everything())
       
       #Replace data.frame with -1, 1 depending on the condition
-      mymat <- df_WT
-      for (k in 1:nrow(mymat)) {
-        for (l in 5:ncol(mymat)){
+      mymat <- data.frame(df_WT)
+      for (k in 1:NROW(mymat)) {
+        for (l in 5:NCOL(mymat)){
           if (mymat[k,l] < mymat[k,4]){
             mymat[k,l]=-1
           } else if (mymat[k,l] > mymat[k,4]){
@@ -114,6 +114,7 @@ filter.methpatterns <- function(val.matrix, freq, density.cutoff, out.dir){
     from <- as.numeric(unlist(strsplit(density.cutoff,":")))[1]
     to <- as.numeric(unlist(strsplit(density.cutoff,":")))[2]
     mypats <- f1[which(f1$density >= from & f1$density <= to),]
+
   } else {
     cat("Applying quantile cutoff...")
     quant.cutoff <- as.numeric(quantile(f1$Freq, probs = c(0.96), na.rm=TRUE))
