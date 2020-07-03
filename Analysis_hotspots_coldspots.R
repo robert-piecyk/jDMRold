@@ -7,8 +7,9 @@ library(dplyr)
 library(GenomicRanges)
 library(pheatmap)
 library(RColorBrewer)
+library(ggplot2)
 
-DMean <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/AB-out/genome-bins-resolutions-29June/MA1_1_divergence-out-10Kb.txt", 
+DMean <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/AB-out/genome-bins-resolutions-3July/MA1_1_divergence-out-10Kb.txt", 
                sep="\t", header=TRUE)
 chrArms <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/myfiles/chr_arms.txt", header=TRUE)
 samplenames <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/myfiles/Stroud-sample-names.txt", 
@@ -178,7 +179,7 @@ print(p)
 # Calculate change in %methylation status from WT for hotspots
 #------------------------------------------------------------------------------------------------
 
-mymat <- perc.meth.count.hotspots
+mymat <- perc.meth.count.hotspots[,-c(NCOL(perc.meth.count.hotspots))]
 
 for (k in 1:NROW(mymat)) {
   for (l in 2:NCOL(mymat)){
@@ -196,10 +197,11 @@ mymat
 #filtering for rows where there is at least 50% decrease in %methylation status in any mutant globally. 
 #I used 10% cutoff for cmt3 and suvh456
 #------------------------------------------------------------------------------------------------------
-mymat.fltered <- mymat[apply(mymat>50, 1, any),]
+mymat.fltered <- mymat[apply(mymat>75, 1, any),]
 
 #finding rows from original dataframe
-data_subset <- perc.meth.count.hotspots[which(rownames(perc.meth.count.hotspots) %in% rownames(mymat.fltered)),]
+orig.df <- perc.meth.count.hotspots[,-c(NCOL(perc.meth.count.hotspots))]
+data_subset <- orig.df[which(rownames(orig.df) %in% rownames(mymat.fltered)),]
 breaksList <- seq(from=min(data_subset), to=max(data_subset), length.out = 10)
 #plotting original values
 h <- pheatmap(data_subset, 
