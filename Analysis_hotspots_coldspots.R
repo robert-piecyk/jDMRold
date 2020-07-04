@@ -219,7 +219,7 @@ h1 <- pheatmap(data_subset.hot,
               color = colorRampPalette(brewer.pal(n = 3, name = "YlOrRd"))(length(breaksList.h)))
 
 #------------------------------------------------------------------------------------------------------
-#COLDSPOTS : Calculate change in %methylation status from WT for hotspots
+#COLDSPOTS : Calculate change in %methylation status from WT for coldspots
 #------------------------------------------------------------------------------------------------------
 
 mymat.cold <- perc.meth.count.coldspots[,-c(NCOL(perc.meth.count.coldspots))]
