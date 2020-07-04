@@ -185,10 +185,14 @@ mymat.hot <- mymat.hot[mymat.hot$WT != 0, ]
 for (k in 1:NROW(mymat.hot)) {
   for (l in 2:NCOL(mymat.hot)){
     if (mymat.hot[k,l] < mymat.hot[k,1]){
-      #finding hotspots in WT that lose methylation (or become coldspots) in mutants, 
+      #finding hotspots in WT that lose methylation in mutants,
       #so calculating %change in methylation status from WT
+      mymat.hot[k,l]=abs((mymat.hot[k,1]-mymat.hot[k,l])/mymat.hot[k,1])*100
+    } else if (mymat.hot[k,l] > mymat.hot[k,1]){
+      #finding hotspots in WT that gain methylation in mutants,
       mymat.hot[k,l]=abs((mymat.hot[k,l]-mymat.hot[k,1])/mymat.hot[k,1])*100
-    } else if (mymat.hot[k,l] >= mymat.hot[k,1]){
+    } else if (mymat.hot[k,l] == mymat.hot[k,1]){
+      #finding hotspots in WT that keep methylation in mutants,
       mymat.hot[k,l]=0
     }
   }
@@ -228,12 +232,13 @@ for (k in 1:NROW(mymat.cold)) {
   for (l in 2:NCOL(mymat.cold)){
     if (mymat.cold[k,l] > mymat.cold[k,1]){
       mymat.cold[k,l]=abs((mymat.cold[k,l]-mymat.cold[k,1])/mymat.cold[k,1])*100
-    } else if (mymat.cold[k,l] <= mymat.cold[k,1]){
+    } else if (mymat.cold[k,l] < mymat.cold[k,1]){
+      mymat.cold[k,l]=abs((mymat.cold[k,l]-mymat.cold[k,1])/mymat.cold[k,1])*100
+    } else if (mymat.cold[k,l] == mymat.cold[k,1]){
       mymat.cold[k,l]=0
     }
   }
 }
-mymat.cold
 
 #filtering for rows where there more than 200% increase in %methylation status in any mutant 
 mymat.cold.fltered <- mymat.cold[apply(mymat.cold >200, 1, any),]
