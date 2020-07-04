@@ -176,38 +176,38 @@ p <- gg + scale_fill_manual(values=c("red", "blue")) +
 print(p)
 
 #------------------------------------------------------------------------------------------------
-# Calculate change in %methylation status from WT for hotspots
+# HOTSPOTS: Calculate change in %methylation status from WT for hotspots
 #------------------------------------------------------------------------------------------------
 
-mymat <- perc.meth.count.hotspots[,-c(NCOL(perc.meth.count.hotspots))]
+mymat.hot <- perc.meth.count.hotspots[,-c(NCOL(perc.meth.count.hotspots))]
+mymat.hot <- mymat.hot[mymat.hot$WT != 0, ]
 
-for (k in 1:NROW(mymat)) {
-  for (l in 2:NCOL(mymat)){
-    if (mymat[k,l] < mymat[k,1]){
-      #finding hotspots in WT that lose methylation (or become coldspots) in mutants, so subtracting %methylation status from WT
-      mymat[k,l]=(mymat[k,1]-mymat[k,l])*100
-    } else if (mymat[k,l] >= mymat[k,1]){
-      mymat[k,l]=0
+for (k in 1:NROW(mymat.hot)) {
+  for (l in 2:NCOL(mymat.hot)){
+    if (mymat.hot[k,l] < mymat.hot[k,1]){
+      #finding hotspots in WT that lose methylation (or become coldspots) in mutants, 
+      #so calculating %change in methylation status from WT
+      mymat.hot[k,l]=abs((mymat.hot[k,l]-mymat.hot[k,1])/mymat.hot[k,1])*100
+    } else if (mymat.hot[k,l] >= mymat.hot[k,1]){
+      mymat.hot[k,l]=0
     }
   }
 }
-mymat
+mymat.hot
 
-#------------------------------------------------------------------------------------------------------
-#filtering for rows where there is at least 50% decrease in %methylation status in any mutant globally. 
-#I used 10% cutoff for cmt3 and suvh456
-#------------------------------------------------------------------------------------------------------
-mymat.fltered <- mymat[apply(mymat>75, 1, any),]
+#filtering for rows where there is at least 75% decrease in %methylation status in any mutant  
+
+mymat.hot.filtered <- mymat.hot[apply(mymat.hot > 90, 1, any),]
 
 #finding rows from original dataframe
-orig.df <- perc.meth.count.hotspots[,-c(NCOL(perc.meth.count.hotspots))]
-data_subset <- orig.df[which(rownames(orig.df) %in% rownames(mymat.fltered)),]
-breaksList <- seq(from=min(data_subset), to=max(data_subset), length.out = 10)
+orig.df.hot <- perc.meth.count.hotspots[,-c(NCOL(perc.meth.count.hotspots))]
+data_subset.hot <- orig.df.hot[which(rownames(orig.df.hot) %in% rownames(mymat.hot.filtered)),]
+breaksList.h <- seq(from=min(data_subset.hot), to=max(data_subset.hot), length.out = 60)
 #plotting original values
-h <- pheatmap(data_subset, 
+h1 <- pheatmap(data_subset.hot, 
               cluster_cols=FALSE,
               #gaps_col = 1,
-              breaks=breaksList,
+              breaks=breaksList.h,
               cluster_rows = FALSE,
               clustering_distance_rows = "euclidean", 
               #clustering_distance_cols = "euclidean", 
@@ -215,8 +215,46 @@ h <- pheatmap(data_subset,
               gaps_col = c(1),
               show_rownames = FALSE,
               border_color=NA,
-              main="%methylation status in WT and mutants",
-              color = colorRampPalette(brewer.pal(n = 3, name = "YlOrRd"))(length(breaksList)))
+              main="%methylation status in WT and mutants for hotspots",
+              color = colorRampPalette(brewer.pal(n = 3, name = "YlOrRd"))(length(breaksList.h)))
 
+#------------------------------------------------------------------------------------------------------
+#COLDSPOTS : Calculate change in %methylation status from WT for hotspots
+#------------------------------------------------------------------------------------------------------
+
+mymat.cold <- perc.meth.count.coldspots[,-c(NCOL(perc.meth.count.coldspots))]
+mymat.cold <- mymat.cold[mymat.cold$WT != 0, ]
+for (k in 1:NROW(mymat.cold)) {
+  for (l in 2:NCOL(mymat.cold)){
+    if (mymat.cold[k,l] > mymat.cold[k,1]){
+      mymat.cold[k,l]=abs((mymat.cold[k,l]-mymat.cold[k,1])/mymat.cold[k,1])*100
+    } else if (mymat.cold[k,l] <= mymat.cold[k,1]){
+      mymat.cold[k,l]=0
+    }
+  }
+}
+mymat.cold
+
+#filtering for rows where there more than 200% increase in %methylation status in any mutant 
+mymat.cold.fltered <- mymat.cold[apply(mymat.cold >200, 1, any),]
+
+#finding rows from original dataframe
+orig.df.cold <- perc.meth.count.coldspots[,-c(NCOL(perc.meth.count.coldspots))]
+data_subset.cold <- orig.df.cold[which(rownames(orig.df.cold) %in% rownames(mymat.cold.fltered)),]
+breaksList.c <- seq(from=min(data_subset.cold), to=max(data_subset.cold), length.out = 60)
+#plotting original values
+h2 <- pheatmap(data_subset.cold, 
+               cluster_cols=FALSE,
+               #gaps_col = 1,
+               breaks=breaksList.c,
+               cluster_rows = FALSE,
+               clustering_distance_rows = "euclidean", 
+               #clustering_distance_cols = "euclidean", 
+               clustering_method = "complete",
+               gaps_col = c(1),
+               show_rownames = FALSE,
+               border_color=NA,
+               main="%methylation status in WT and mutants for coldspots",
+               color = colorRampPalette(brewer.pal(n = 5, name = "YlOrRd"))(length(breaksList.c)))
 
 
