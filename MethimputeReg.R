@@ -184,33 +184,3 @@ makeMethimpute<-function(df, context, fit.plot, fit.name, refRegion, include.int
   return(methFile)
 }
 
-#--------------------------------------------------------------------------
-
-runMethimputeRegions <- function(Methfiles, Regionfiles, context, include.intermediate, probability, fit.plot, out.dir) {
-  filelist <- fread(Methfiles, header=TRUE)
-  #Methfiles <- list.files(Methfiles, pattern='\\.txt$', full.names = TRUE)
-  for (i in 1:length(filelist$file)){
-    for (j in 1:length(context)){
-      methfn <- gsub(".*methylome_|\\_All.txt$", "", filelist$file[i])
-      Regfiles <- list.files(Regionfiles, pattern=paste0("_", context[j], ".Rdata"), full.names = TRUE)
-      for (k in 1:length(Regfiles)){
-
-        tmp <- gsub(".*Arabidopsis_regions_|\\.Rdata$", "", Regfiles[k])
-        chr <- gsub(paste0("_", context[j]), "", tmp)
-
-        name <- paste0(methfn, "_", chr)
-        cat(paste0("Running file ", methfn, " for context ", context[j], " and ", chr,"\n"), sep = "")
-        makeMethimpute(
-          df=filelist$file[i],
-          context=context[j],
-          refRegion=Regfiles[k],
-          fit.plot=fit.plot,
-          include.intermediate=include.intermediate, 
-          probability=probability,
-          out.dir=out.dir,
-          fit.name=paste0(methfn, "_", context[j], "_", chr),
-          name=name)
-      }
-    }
-  }
-}
