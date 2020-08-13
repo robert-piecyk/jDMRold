@@ -47,6 +47,7 @@ makeDMRmatrix <- function(context, chr, samplefile, input.dir, out.dir) {
         flist <- rbindlist(selectlist)
         print(flist)
         
+        # Assign unique names for samples with or without replicate data
         if (!is.null(flist$replicate)) {
           cat(paste0("Input data with replicates....creating unique sample names\n"), sep = "")
           flist$name <- paste0(flist$sample,"_", flist$replicate)
@@ -56,6 +57,7 @@ makeDMRmatrix <- function(context, chr, samplefile, input.dir, out.dir) {
         
         cat(paste0("Now, constructing DMR matrix\n"), sep = "")
         
+        # merge samples by Chr coordinates
         #(column 6) state-calls and (column 7) rc.meth.lvl
         mydf <- merge.cols(filepath=flist$full.path.regfile, colm=c(6, 7))
         
