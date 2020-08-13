@@ -1,7 +1,28 @@
 
-makeDMRmatrix <- function(context, chr, samplefile, input.dir, out.dir) {
-  
+# This function will merge (column 6) state calls and (column 7) rc.meth.lvl from all samples into one dataframe
+# makes list of 2 dataframes
+merge.cols <- function(filepath, colm) {
   mylist <- list()
+  for (l in 1:length(colm)){
+    extract <- lapply(filepath, function(k){
+      f <- fread(k, header=FALSE, skip=1, select=c(1, 2, 3, colm[l]))
+      if (colm[l]==6) {
+        f[,4] <- ifelse(f[,4] == "U", yes = 0, no = 1)
+      }
+      colnames(f)[4] <- basename(k)
+      return(f)
+    })
+    df <- Reduce(function(x, y) {
+      dplyr::inner_join(x, y, by=c("V1","V2","V3"))
+    }, extract)
+    
+    mylist[[l]] <- df
+  }
+  return(mylist)
+}
+
+
+makeDMRmatrix <- function(context, chr, samplefile, input.dir, out.dir) {
   
   # Read the sample file with filenames
   samplelist <- fread(samplefile, header=T)
@@ -34,41 +55,30 @@ makeDMRmatrix <- function(context, chr, samplefile, input.dir, out.dir) {
         }
         
         cat(paste0("Now, constructing DMR matrix\n"), sep = "")
-        # (column 6) state calls and (column 7) rc.meth.lvl for all samples; make 2 matrices
-        merge.cols <- function(colm) {
-          for (l in 1:length(colm)){
-            extract <- lapply(flist$full.path.regfile, function(k){
-              f <- fread(k, header=FALSE, skip=1, select=c(1, 2, 3, colm[l]))
-              if (colm[l]==6) {
-                f[,4] <- ifelse(f[,4] == "U", yes = 0, no = 1)
-              }
-              colnames(f)[4] <- basename(k)
-              return(f)
-            })
-            df <- Reduce(function(x, y) {
-              dplyr::inner_join(x, y, by=c("V1","V2","V3"))
-            }, extract)
-            
-            # renaming file names with sample names
-            for (a in 4:length(colnames(df))) {
-              for (n in 1:length(flist$name)) {
-                if (colnames(df)[a] == basename(flist$full.path.regfile)[n]) {
-                  colnames(df)[a] = flist$name[n]
-                }
-              }
-            }
-            mylist[[l]] <- df
-          }
-          return(mylist)
-        }
         
         #(column 6) state-calls and (column 7) rc.meth.lvl
-        mydf <- merge.cols(colm=c(6, 7))
+        mydf <- merge.cols(filepath=flist$full.path.regfile, colm=c(6, 7))
         
-        # list containing the state calls
+        # list containing state calls
         status.collect <- mydf[[1]]
-        # list containing the rcmethlvls
+        # renaming file names with sample names
+        for (a in 4:length(colnames(status.collect))) {
+          for (n in 1:length(flist$name)) {
+            if (colnames(status.collect)[a] == basename(flist$full.path.regfile)[n]) {
+              colnames(status.collect)[a] = flist$name[n]
+            }
+          }
+        }
+        # list containing rcmethlvls
         rc.methlevel.collect <- mydf[[2]]
+        # renaming file names with sample names
+        for (a in 4:length(colnames(rc.methlevel.collect))) {
+          for (n in 1:length(flist$name)) {
+            if (colnames(rc.methlevel.collect)[a] == basename(flist$full.path.regfile)[n]) {
+              colnames(rc.methlevel.collect)[a] = flist$name[n]
+            }
+          }
+        }
         
         names(status.collect)[1] <- "seqnames"
         names(status.collect)[2] <- "start"
