@@ -103,7 +103,6 @@ filterDMRmatrix(replicate.consensus=1,
 #-----------------------------------------------------------------------------
 # Run Annotate DMRs
 #-----------------------------------------------------------------------------
-
 rm(list=ls())
 library(data.table)
 library(dplyr)
@@ -114,31 +113,36 @@ library(tidyr)
 #Load source code
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/annotateDMRs.R", sep=""))
 
-# annotation files
+# gff3 annotation files. Supply as one gff3 file
 wd ="/Users/rashmi/basedir/DMRcaller"
 gff.AT <- paste0(wd, "/Annotations/Arabidopsis_thaliana.TAIR10.43.gff3", sep="")
 gff.TE <- paste0(wd, "/Annotations/TAIR10_TE.gff3", sep="")
 gff.pr <- paste0(wd, "/Annotations/TAIR10_promoters.gff3",sep="")
+gff <- c(gff.AT, gff.TE, gff.pr)
+input.gff <- lapply(gff, function(x){ 
+  import.gff3(x, colnames=c("type", "ID")) 
+})
+merged.gff <- do.call(c, input.gff)
 
-#-----------------------------------------------
-#myfile <- paste0(out.dir, "chr1_CG_state-calls-filtered.txt", sep="")
-inputf <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/DMRmatrix"
-myfiles <- list.files(inputf, pattern="*state-calls-filtered.txt", full.names = TRUE)
-
-#-----------------------------------------------
-out.dir <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/annotations"
-
-annotateDMRs(
-  gff=c(gff.AT, gff.TE, gff.pr),
-  annotation=c("gene","promoters","TE"),
-  file.list=myfiles,
-  out.dir=out.dir)
-
+# Check Annotation levels here. Supply annotation terms for e.g genes, TEs
+levels(elementMetadata(merged.gff)[,"type"])
 #available annotations
 #"chromosome","gene","mRNA","five_prime_UTR","exon","CDS",
 #"three_prime_UTR","ncRNA_gene","lnc_RNA","miRNA","tRNA","ncRNA",
 #"snoRNA","snRNA","rRNA","TE","promoters"
 
+# Path to filtered DMR files with 3 columns: seqnames, start, end
+inputf <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/Poppenberger-dataset/DMRmatrix/FP0.1"
+myfiles <- list.files(inputf, pattern="*state-calls-filtered.txt", full.names = TRUE)
+
+# Output Path
+out.dir <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/Poppenberger-dataset/annotations/FP0.1"
+
+annotateDMRs(gff=merged.gff,
+             annotation=c("gene","promoters","TE"),
+             file.list=myfiles,
+             gff3.out=TRUE,
+             out.dir=out.dir)
 
 #-----------------------------------------------------------------------------
 # Methimpute to BedGraph format. This is only for Region level output files
