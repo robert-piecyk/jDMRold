@@ -14,7 +14,7 @@ DMean <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/AB-out/genome
 chrArms <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/myfiles/chr_arms.txt", header=TRUE)
 samplenames <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/myfiles/Stroud-sample-names.txt", 
                      header=FALSE)
-CG_status_calls <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/myfiles/CG_statuscalls.txt")
+CG_status_calls <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/myfiles/CG_statuscalls-400bp.txt")
 
 #replace NA with 0
 DMean[is.na(DMean)] <- 0
@@ -65,6 +65,30 @@ mcols(hotspots) <- cbind.data.frame(mcols(hotspots), id=hotspots.id$id)
 mcols(coldspots) <- cbind.data.frame(mcols(coldspots), id=coldspots.id$id)
 hotspots
 coldspots
+
+#-----------------------------------------------------------
+# Now load the CS states annotations
+#-----------------------------------------------------------
+#g0 <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/CS/g0.bed")
+#g1 <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/CS/g1.bed")
+#g2 <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/CS/g2.bed")
+#g3 <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/CS/g3.bed")
+#g4 <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/CS/g4.bed")
+#g5 <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/CS/g5.bed")
+#g6 <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/CS/g6.bed")
+#g0.gr <- GRanges(seqnames=g0$V1,ranges=IRanges(start=g0$V2,end=g0$V3))
+#g1.gr <- GRanges(seqnames=g1$V1,ranges=IRanges(start=g1$V2,end=g1$V3))
+#g2.gr <- GRanges(seqnames=g2$V1,ranges=IRanges(start=g2$V2,end=g2$V3))
+#g3.gr <- GRanges(seqnames=g3$V1,ranges=IRanges(start=g3$V2,end=g3$V3))
+#g4.gr <- GRanges(seqnames=g4$V1,ranges=IRanges(start=g4$V2,end=g4$V3))
+#g5.gr <- GRanges(seqnames=g5$V1,ranges=IRanges(start=g5$V2,end=g5$V3))
+#g6.gr <- GRanges(seqnames=g6$V1,ranges=IRanges(start=g6$V2,end=g6$V3))
+#overlaps_g0 <- findOverlaps(g0.gr, hotspots)
+#bins_g0 <- g0.gr[queryHits(overlaps_g0)]
+#overlaps_g4 <- findOverlaps(g4.gr, hotspots)
+#bins_g4 <- g4.gr[queryHits(overlaps_g4)]
+#overlaps_g5 <- findOverlaps(g5.gr, hotspots)
+#bins_g5 <- g5.gr[queryHits(overlaps_g5)]
 
 #-------------------------------------------------------------------
 # PLOT1: Plot the length distributions of hot- and coldspots
@@ -146,7 +170,6 @@ d <- cold.df %>% group_by(id) %>%
 meth.count.coldspots <- merge(c,d,by="id")
 perc.meth.count.coldspots <- meth.count.coldspots[,3:NCOL(meth.count.coldspots)] / meth.count.coldspots[,2]
 
-
 #--------------------------------------------------------
 # PLOT2: Plot %methylation status of hot- and cold- spots in WT
 #--------------------------------------------------------
@@ -207,9 +230,17 @@ mymat.hot.filtered <- mymat.hot[apply(mymat.hot > 90, 1, any),]
 orig.df.hot <- perc.meth.count.hotspots[,-c(NCOL(perc.meth.count.hotspots))]
 data_subset.hot <- orig.df.hot[which(rownames(orig.df.hot) %in% rownames(mymat.hot.filtered)),]
 breaksList.h <- seq(from=min(data_subset.hot), to=max(data_subset.hot), length.out = 60)
+
+anno.row.hot <- data_subset.hot %>%
+  select(WT) %>%
+  as.data.frame()
+data_subset.hot.p <- data_subset.hot %>%
+  select(-WT) %>%
+  as.data.frame()
+
 #plotting original values
 h1 <- pheatmap(data_subset.hot, 
-              cluster_cols=FALSE,
+              cluster_cols=TRUE,
               #gaps_col = 1,
               breaks=breaksList.h,
               cluster_rows = FALSE,
@@ -246,17 +277,27 @@ mymat.cold.fltered <- mymat.cold[apply(mymat.cold >200, 1, any),]
 #finding rows from original dataframe
 orig.df.cold <- perc.meth.count.coldspots[,-c(NCOL(perc.meth.count.coldspots))]
 data_subset.cold <- orig.df.cold[which(rownames(orig.df.cold) %in% rownames(mymat.cold.fltered)),]
-breaksList.c <- seq(from=min(data_subset.cold), to=max(data_subset.cold), length.out = 60)
+breaksList.c <- seq(from=min(data_subset.cold), to=max(data_subset.cold), length.out = NROW(data_subset.cold))
+
+anno.row.cold <- data_subset.cold %>%
+  select(WT) %>%
+  as.data.frame()
+data_subset.cold.p <- data_subset.cold %>%
+  select(-WT) %>%
+  as.data.frame()
+
 #plotting original values
 h2 <- pheatmap(data_subset.cold, 
-               cluster_cols=FALSE,
+               cluster_cols=TRUE,
                #gaps_col = 1,
                breaks=breaksList.c,
                cluster_rows = FALSE,
                clustering_distance_rows = "euclidean", 
                #clustering_distance_cols = "euclidean", 
                clustering_method = "complete",
-               gaps_col = c(1),
+               #annotation_row = anno.row.cold,
+               #annotation_colors =,
+               #gaps_col = c(1),
                show_rownames = FALSE,
                border_color=NA,
                main="%methylation status in WT and mutants for coldspots",

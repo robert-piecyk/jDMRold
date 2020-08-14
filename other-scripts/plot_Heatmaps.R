@@ -12,14 +12,16 @@ library(RColorBrewer)
 #-----------------------------------------------------------------------------
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/methpatterns.R"))
 
-# binary matrix data
-fmat <- fread("/Users/rashmi/basedir/DMRcaller/test/chr1_CG/chr1_CG_mat.txt", header = TRUE, sep = "\t")
-# actual values data
-fvals <- fread("/Users/rashmi/basedir/DMRcaller/test/chr1_CG/chr1_CG_vals.txt", header = TRUE, sep = "\t")
+# rc.meth.lvl data
+fvals <- fread("/Users/rashmi/basedir/DMRcaller/test/vals_filtered_0.0005-density.txt", 
+               header = TRUE, sep = "\t")
+
 # density/frequency output
-fdensity <- fread("/Users/rashmi/basedir/DMRcaller/test/chr1_CG/chr1_CG_meth-patterns-freq.txt",header = TRUE, sep = "\t")
+fdensity <- fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/CG_All_methpatterns-freq.txt",
+                  header = TRUE, sep = "\t")
 #sample names
-samplesnames <-fread("/Users/rashmi/basedir/DMRcaller/makeRegScripts/DMRs/sample-names.txt",header = FALSE, sep = "\t")
+samplesnames <-fread("/Users/rashmi/basedir/DMRcaller/test/StroudMutants/Stroud-sample-names.txt",
+                     header = FALSE, sep = "\t")
 #output directory
 output.dir <-"/Users/rashmi/basedir/DMRcaller/test"
 
@@ -28,6 +30,7 @@ mydf <- fvals[,4:ncol(fvals)]
 
 #mean of all regions that belong to each pattern
 mydf.1 <- aggregate(. ~ Pattern, data = mydf, FUN = mean)
+
 #replace sample name to a general name
 setnames(mydf.1, old = samplesnames$V1, new = samplesnames$V2)
 
@@ -42,19 +45,25 @@ my_hclust <- hclust(dist(data_subset), method = "complete")
 #plot(my_hclust_pat)
 #get_clust <- cutree(tree = my_hclust, k = 5)
 #get_clust
-breaksList <- seq(from=min(data_subset), to=max(data_subset), length.out = 10)
+#breaksList <- seq(from=min(data_subset), to=max(data_subset), length.out = NROW(data_subset))
+
+quantile_breaks <- function(xs, n ) {
+    breaks <- quantile(xs, probs = seq(0, 1, length.out = n))
+    breaks[!duplicated(breaks)]
+}
+
+breaksList <- quantile_breaks(data_subset, n = 10)
+
 h0 <- pheatmap(data_subset, show_rownames = FALSE)
 #ordering dataframe of density of patterns to add it as an annotation row to the heatmap 
 myrow <- rownames(data_subset[h0$tree_row[["order"]],])
-fdensity1 <- fdensity[,c("Pattern","CG-density")]
+fdensity1 <- fdensity[,c("Pattern","density")]
 fdensity1 <- data.frame(fdensity1)
 mynew <- fdensity1[match(myrow, fdensity1$Pattern),]
 rownames(mynew) <- mynew[,1]
 mynew[,1] <- NULL
-pdf(paste(output.dir, "/chr1_CG_val.pdf", sep=""), 
-    #colormodel = 'cmyk', 
-    width = 8, 
-    height = 14)
+
+pdf(paste(output.dir, "/heatmap_0.0005-density.pdf", sep=""), width = 16, height = 8)
 h <- pheatmap(data_subset, 
               cluster_cols=TRUE,
               #gaps_col = 1,
@@ -65,6 +74,7 @@ h <- pheatmap(data_subset,
               clustering_method = "complete",
               annotation_row = mynew,
               show_rownames = FALSE,
+              fontsize_col = 8,
               color = colorRampPalette(brewer.pal(n = 3, name = "YlOrRd"))(length(breaksList)))
 print (h)
 dev.off()

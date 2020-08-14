@@ -138,3 +138,23 @@ annotateDMRs(
 #"chromosome","gene","mRNA","five_prime_UTR","exon","CDS",
 #"three_prime_UTR","ncRNA_gene","lnc_RNA","miRNA","tRNA","ncRNA",
 #"snoRNA","snRNA","rRNA","TE","promoters"
+
+
+#-----------------------------------------------------------------------------
+# Methimpute to BedGraph format. This is only for Region level output files
+# The bedgraph outputs can be further converted to bigwig using MethylStar
+#-----------------------------------------------------------------------------
+rm(list=ls())
+library(data.table)
+
+source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/MethimputeRegTobedGraph.R", sep=""))
+
+wd <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/RegionCalls"
+myfiles <- list.files(wd, pattern=".txt$", full.names = TRUE)
+out.dir <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/bedgraph"
+
+for (i in 1:length(myfiles)) {
+  MethimputeRegTobedGraph(regfile=myfiles[i],
+                          out.dir=out.dir)
+}
+

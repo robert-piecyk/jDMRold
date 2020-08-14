@@ -13,9 +13,9 @@ source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/methpat
 ##Output directory containing methimpute region level calls
 methout <- "/Users/rashmi/basedir/DMRcaller/test/chr1_CG"
 methpatterns(methout=methout, 
-             context=c("CG","CHG","CHH"),
-             #chr <- c("chr1"),
-             chr <- c("chr1","chr2","chr3","chr4","chr5"),
+             context=c("CG"),
+             chr <- c("chr1"),
+             #chr <- c("chr1","chr2","chr3","chr4","chr5"),
              out.dir=methout, 
              WT="SRR534177")
 
@@ -23,10 +23,10 @@ methpatterns(methout=methout,
 # Filter low density patterns
 #-----------------------------------------------------------------------------
 
-freq <- "/Users/rashmi/basedir/DMRcaller/test/chr1_CG/CG_All_methpatterns-freq.txt"
-val.matrix <- "/Users/rashmi/basedir/DMRcaller/test/chr1_CG/CG_All_vals.txt"
+freq <- "/Users/rashmi/basedir/DMRcaller/test/StroudMutants/CG_All_methpatterns-freq.txt"
+val.matrix <- "/Users/rashmi/basedir/DMRcaller/test/StroudMutants/CG_All_vals.txt"
 filter.methpatterns(val.matrix=val.matrix,
                     freq=freq,
-                    #density.cutoff="0.0001:0.7",
-                    density.cutoff=NULL,
-                    out.dir="/Users/rashmi/basedir/DMRcaller/test/chr1_CG")
+                    #density.cutoff="0.0001:7",
+                    density.cutoff="0.0005:1",
+                    out.dir="/Users/rashmi/basedir/DMRcaller/test")
