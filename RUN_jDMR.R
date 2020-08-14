@@ -66,7 +66,6 @@ runMethimputeRegions(Regionfiles=Regionsfolder,
 rm(list=ls())
 library(data.table)
 library(dplyr)
-library(stringr)
 
 # makeDMRmatrix: for both population level and  pairwise control-Treatment data
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/makeDMRmatrix.R"))
@@ -82,29 +81,24 @@ makeDMRmatrix(context=c("CG"),
               input.dir=input.dir,
               out.dir=out.dir)
 
-
 #-----------------------------------------------------------------------------
 # Run Filter DMR Matrix
 #-----------------------------------------------------------------------------
-
 rm(list=ls())
 library(data.table)
 library(dplyr)
-library(stringr)
 
-#--------------------------------------------
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/filterDMRmatrix.R"))
 source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/globFun.R"))
 
-out.dir <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/DMRmatrix"
+data.dir <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/DMRmatrix"
 
 # for datasets with just 2 replicates (pairwise control-Treatment data) please set replicate.consensus value to 1.
+# either specify value or set replicate.consensus=NULL or epiMAF.cutoff=NULL
 filterDMRmatrix(replicate.consensus=1,
-                #epiMAF.cutoff = 0.33
+                #epiMAF.cutoff = 0.33,
                 epiMAF.cutoff=NULL,
-                context=c("CG","CHG","CHH"),
-                chr=c("chr1","chr2","chr3","chr4","chr5"),
-                out.dir=out.dir)
+                data.dir=data.dir)
 
 #-----------------------------------------------------------------------------
 # Run Annotate DMRs
