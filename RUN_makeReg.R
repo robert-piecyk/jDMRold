@@ -20,6 +20,7 @@ out.name <- "Arabidopsis"
 contexts <- c("CG", "CHG", "CHH","C")
 makeNull <- c(TRUE, TRUE, TRUE, TRUE)
 min.C <- 5
+fp.rate <- 0.01
 
 #-----------------------------------------------------------------------------------
 chrfiles <- list.files(fasta.folder, pattern=paste0("*.fa.gz$"), full.names = TRUE)
@@ -43,7 +44,7 @@ for (i in 1:length(chrfiles)) {
                       min.C = min.C, 
                       N.boot=10^5, 
                       N.sim.C = "all", 
-                      fp.rate=0.01, 
+                      fp.rate=fp.rate, 
                       set.tol=0.01, 
                       out.dir, 
                       out.name=out.name))
