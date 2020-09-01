@@ -108,53 +108,57 @@ modifiedExportMethylome <- function(model, out.dir, context, name) {
 #--------------------------------------------------------------------------
 
 makeRegionsImpute <- function(df, context, refRegion) {
-    #regions file
-    #data <- dget(regionFile)
-    #data <- refRegion
-    tmp_reg <- dget(refRegion)
-    data <- as.data.frame(tmp_reg$reg.obs)
-    #colnames(data)[which(names(data) == "cluster.size")] <- "cluster.length"
+  #regions file
+  #data <- dget(regionFile)
+  #data <- refRegion
+  tmp_reg <- dget(refRegion)
+  data <- as.data.frame(tmp_reg$reg.obs)
+  #colnames(data)[which(names(data) == "cluster.size")] <- "cluster.length"
+  
+  #reference methimpute file
+  ref_data <- fread(df, skip = 1, select = c("V1","V2","V3","V4","V5","V6"))
+  
+  #remove Mt and chloroplast coordinates. Following is for Arabidopsis only
+  ref_data <- ref_data %>% filter(ref_data$V1 != "M" & ref_data$V1 != "C")
+  ref_data <- ref_data[which(ref_data$V4==context),]
+  
+  data_gr <- GRanges(seqnames=data$chr,
+                     ranges=IRanges(start=data$start, end=data$end),
+                     clusterlen=data$cluster.length,
+                     context=as.factor(context))
+  
+  ref_gr <- GRanges(seqnames=ref_data$V1,
+                    ranges=IRanges(start=ref_data$V2, width=1),
+                    context=as.factor(context),
+                    methylated=ref_data$V5,
+                    total=ref_data$V6)
+  
+  counts <- array(NA, dim=c(length(data_gr), 2),
+                  dimnames=list(NULL, c("methylated", "total")))
+  
+  overlaps <- findOverlaps(ref_gr, data_gr)
+  
+  overlaps.hits <- ref_gr[queryHits(overlaps)]
+  if (NROW(overlaps.hits) != 0){
     
-    #reference methimpute file
-    ref_data <- fread(df, skip = 1, select = c("V1","V2","V3","V4","V5","V6"))
-    ref_data <- ref_data %>% filter(ref_data$V1 != "M" & ref_data$V1 != "C")
-    ref_data <- ref_data[which(ref_data$V4==context),]
-
-    data_gr <- GRanges(seqnames=data$chr,
-      ranges=IRanges(start=data$start, end=data$end),
-      clusterlen=data$cluster.length,
-      context=as.factor(context))
-
-    ref_gr <- GRanges(seqnames=ref_data$V1,
-      ranges=IRanges(start=ref_data$V2, width=1),
-      context=as.factor(context),
-      methylated=ref_data$V5,
-      total=ref_data$V6)
-
-    counts <- array(NA, dim=c(length(data_gr), 2),
-      dimnames=list(NULL, c("methylated", "total")))
-
-    overlaps <- findOverlaps(ref_gr, data_gr)
-
-
-    overlaps.hits <- ref_gr[queryHits(overlaps)]
-
     methylated <- aggregate(overlaps.hits$methylated, list(subjectHits(overlaps)), FUN=sum)
     total <- aggregate(overlaps.hits$total, list(subjectHits(overlaps)), FUN=sum)
     
     if (NROW(methylated) != NROW(counts) ){
-    missingr <- which(!rownames(data.frame(data_gr)) %in% methylated$Group.1)
-
-    for(item in seq_len(NROW((missingr)))){
+      missingr <- which(!rownames(data.frame(data_gr)) %in% methylated$Group.1)
+      
+      for(item in seq_len(NROW((missingr)))){
         methylated <- rbind (c(missingr[item],0), methylated)
         methylated <- methylated[order(methylated$Group.1),]
         total <- rbind (c(missingr[item],0), total)
         total <- total[order(total$Group.1),]
+      }
     }
+    counts[,"methylated"] <- methylated$x
+    counts[,"total"] <- total$x
+    data_gr$counts <- counts
   }
-  counts[,"methylated"] <- methylated$x
-  counts[,"total"] <- total$x
-  data_gr$counts <- counts
+  rm(ref_data, ref_gr, overlaps, overlaps.hits)
   return(data_gr)
 }
 
@@ -162,25 +166,29 @@ makeRegionsImpute <- function(df, context, refRegion) {
 
 makeMethimpute<-function(df, context, fit.plot, fit.name, refRegion, include.intermediate, probability, out.dir, name){
   methylome.data <- makeRegionsImpute(df, context, refRegion)
-  quant.cutoff <- as.numeric(quantile(methylome.data$counts[,"total"], probs = c(0.96), na.rm=TRUE))
-  distcor <- distanceCorrelation(methylome.data, distances=0:100)
-  fit <- modified.estimateTransDist(distcor)
-  
-  if (fit.plot==TRUE){
-    print(paste0("Generating fit plot...", name))
-    pdf(paste0(out.dir, fit.name, ".pdf", sep = ""))
-    print(fit)
-    dev.off()
+  if (!is.null(methylome.data$counts)) {
+    quant.cutoff <- as.numeric(quantile(methylome.data$counts[,"total"], probs = c(0.96), na.rm=TRUE))
+    distcor <- distanceCorrelation(methylome.data, distances=0:100)
+    fit <- modified.estimateTransDist(distcor)
+    
+    if (fit.plot==TRUE){
+      print(paste0("Generating fit plot...", name))
+      pdf(paste0(out.dir, fit.name, ".pdf", sep = ""))
+      print(fit)
+      dev.off()
+    }
+    
+    model <- callMethylation(data = methylome.data,
+                             transDist = fit$transDist,
+                             count.cutoff = quant.cutoff,
+                             max.time = Inf,
+                             max.iter = Inf,
+                             include.intermediate = include.intermediate,
+                             update = probability)
+    methFile <- modifiedExportMethylome(model, out.dir, context, name)
+    rm(model)
+    return(methFile)
   }
-  
-  model <- callMethylation(data = methylome.data,
-                           transDist = fit$transDist,
-                           count.cutoff = quant.cutoff,
-                           max.time = Inf,
-                           max.iter = Inf,
-                           include.intermediate = include.intermediate,
-                           update = probability)
-  methFile <- modifiedExportMethylome(model, out.dir, context, name)
-  return(methFile)
+  rm(methylome.data)
 }
 
