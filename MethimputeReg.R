@@ -81,7 +81,8 @@ modified.estimateTransDist <- function(distcor, skip=2, plot.parameters=TRUE) {
 #--------------------------------------------------------------------------
 
 modifiedExportMethylome <- function(model, out.dir, context, name) {
-    data <- model$data
+    #data <- model$data
+    data <- model
     final_dataset <- as(data, 'data.frame')
     final_dataset <- final_dataset[,c('seqnames','start','end','strand',
       'context','counts.methylated','counts.total',
@@ -126,7 +127,7 @@ makeRegionsImpute <- function(df, context, refRegion) {
                      ranges=IRanges(start=data$start, end=data$end),
                      clusterlen=data$cluster.length,
                      context=as.factor(context))
-  
+
   ref_gr <- GRanges(seqnames=ref_data$V1,
                     ranges=IRanges(start=ref_data$V2, width=1),
                     context=as.factor(context),
@@ -164,7 +165,7 @@ makeRegionsImpute <- function(df, context, refRegion) {
 
 #--------------------------------------------------------------------------
 
-makeMethimpute<-function(df, context, fit.plot, fit.name, refRegion, include.intermediate, probability, out.dir, name){
+makeMethimpute<-function(df, context, fit.plot, merge.chr, fit.name, refRegion, include.intermediate, probability, out.dir, name){
   methylome.data <- makeRegionsImpute(df, context, refRegion)
   if (!is.null(methylome.data$counts)) {
     quant.cutoff <- as.numeric(quantile(methylome.data$counts[,"total"], probs = c(0.96), na.rm=TRUE))
@@ -173,7 +174,7 @@ makeMethimpute<-function(df, context, fit.plot, fit.name, refRegion, include.int
     
     if (fit.plot==TRUE){
       print(paste0("Generating fit plot...", name))
-      pdf(paste0(out.dir, fit.name, ".pdf", sep = ""))
+      pdf(paste0(out.dir, "/", fit.name, "-fit.pdf", sep = ""))
       print(fit)
       dev.off()
     }
@@ -185,9 +186,14 @@ makeMethimpute<-function(df, context, fit.plot, fit.name, refRegion, include.int
                              max.iter = Inf,
                              include.intermediate = include.intermediate,
                              update = probability)
-    methFile <- modifiedExportMethylome(model, out.dir, context, name)
-    rm(model)
-    return(methFile)
+    if (merge.chr==FALSE){
+      methFile <- modifiedExportMethylome(model=model$data, out.dir=out.dir, context=context, name=name)
+      return(methFile)
+    } else {
+      mymodel <- model$data
+      return(mymodel)
+    }
+    rm(model, methfile) 
   }
   rm(methylome.data)
 }

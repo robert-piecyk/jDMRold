@@ -4,40 +4,14 @@ rm(list=ls())
 library(data.table)
 library(dplyr)
 library(methimpute)
-
-runMethimputeRegions <- function(Methfiles, Regionfiles, context, fit.plot, out.dir) {
-  filelist <- fread(Methfiles, header=TRUE)
-  for (i in 1:length(filelist$file)){
-    for (j in 1:length(context)){
-      methfn <- gsub(".*methylome_|\\_All.txt$", "", filelist$file[i])
-      Regfiles <- list.files(Regionfiles, pattern=paste0("_", context[j], ".Rdata"), full.names = TRUE)
-      for (k in 1:length(Regfiles)){
-        
-        tmp <- gsub(".*Arabidopsis_regions_|\\.Rdata$", "", Regfiles[k])
-        chr <- gsub(paste0("_", context[j]), "", tmp)
-        
-        name <- paste0(methfn, "_", chr)
-        cat(paste0("Running file ", methfn, " for context ", context[j], " and ", chr,"\n"), sep = "")
-        makeMethimpute(
-          df=filelist$file[i],
-          context=context[j],
-          refRegion=Regfiles[k],
-          fit.plot=fit.plot,
-          include.intermediate=FALSE, 
-          probability="constrained",
-          out.dir=out.dir,
-          fit.name=paste0(methfn, "_", context[j], "_", chr),
-          name=name)
-      }
-    }
-  }
-}
+library(stringr)
 
 #-----------------------------------------------------------------------------
 # Run Methimpute for cytosine regions
 #-----------------------------------------------------------------------------
-source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/globFun.R"))
-source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/MethimputeReg.R"))
+source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts-local/DMRs/globFun.R"))
+source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts-local/DMRs/MethimputeReg.R"))
+source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts-local/DMRs/runMethimputeRegions.R"))
 
 #Input files required:
 #-----------------------------------------------------------------------------
@@ -47,7 +21,7 @@ Regionsfolder <- "/Users/rashmi/basedir/DMRcaller/PRODUCED/min.C_5/fp_0.1"
 ##Output directory
 myoutput <- "/Users/rashmi/basedir/DMRcaller/jDMR-output"
 
-##list containing filenames with full PATH
+##list containing filenames with full PATH.Note that Methimpute files should have prefix "methylome" and suffix "All.txt"
 filelist <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/listFiles.fn"
 
 #-----------------------------------------------------------------------------
@@ -55,43 +29,37 @@ filelist <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/listFiles.fn"
 #probability = one of c("independent","constrained").ignore for now.
 
 runMethimputeRegions(Regionfiles=Regionsfolder,
-                     Methfiles=filelist,
-                     context=c("CG"),
-                     fit.plot=FALSE,
+                     samplefiles=filelist,
+                     context=c("CG","CHG","CHH"),
+                     run.chr.separate=TRUE,
                      out.dir=myoutput)
 
 #-----------------------------------------------------------------------------
 # Run DMR Matrix
 #-----------------------------------------------------------------------------
 rm(list=ls())
-library(data.table)
-library(dplyr)
 
 # makeDMRmatrix: for both population level and  pairwise control-Treatment data
-source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/makeDMRmatrix.R"))
+source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts-local/DMRs/makeDMRmatrix.R"))
 
-input.dir <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/RegionCalls"
-out.dir <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/DMRmatrix"
+mydir <- "/Users/rashmi/basedir/DMRcaller/jDMR-output"
 filelist <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/listFiles.fn"
 
 # make binary & rc.meth.lvl matrix
-makeDMRmatrix(context=c("CG"),
-              chr=c("chr1","chr2","chr3","chr4","chr5"),
-              samplefile=filelist,
-              input.dir=input.dir,
-              out.dir=out.dir)
+makeDMRmatrix(context=c("CG","CHG","CHH"),
+              samplefiles=filelist,
+              input.dir=mydir,
+              out.dir=mydir)
 
 #-----------------------------------------------------------------------------
 # Run Filter DMR Matrix
 #-----------------------------------------------------------------------------
 rm(list=ls())
-library(data.table)
-library(dplyr)
 
-source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/filterDMRmatrix.R"))
-source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/globFun.R"))
+source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts-local/DMRs/filterDMRmatrix.R"))
+source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts-local/DMRs/globFun.R"))
 
-data.dir <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/DMRmatrix"
+data.dir <- "/Users/rashmi/basedir/DMRcaller/jDMR-output"
 
 # for datasets with just 2 replicates (pairwise control-Treatment data) please set replicate.consensus value to 1.
 # either specify value or set replicate.consensus=NULL or epiMAF.cutoff=NULL
@@ -104,8 +72,6 @@ filterDMRmatrix(replicate.consensus=1,
 # Run Annotate DMRs
 #-----------------------------------------------------------------------------
 rm(list=ls())
-library(data.table)
-library(dplyr)
 library(ggplot2)
 library(rtracklayer)
 library(tidyr)
@@ -132,11 +98,11 @@ levels(elementMetadata(merged.gff)[,"type"])
 #"snoRNA","snRNA","rRNA","TE","promoters"
 
 # Path to filtered DMR files with 3 columns: seqnames, start, end
-inputf <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/Poppenberger-dataset/DMRmatrix/FP0.1"
-myfiles <- list.files(inputf, pattern="*state-calls-filtered.txt", full.names = TRUE)
+inputf <- "/Users/rashmi/basedir/DMRcaller/CytosineRegions_background/FP0.1"
+myfiles <- list.files(inputf, pattern="*.txt", full.names = TRUE)
 
 # Output Path
-out.dir <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/Poppenberger-dataset/annotations/FP0.1"
+out.dir <- "/Users/rashmi/basedir/DMRcaller/CytosineRegions_background/FP0.1"
 
 annotateDMRs(gff=merged.gff,
              annotation=c("gene","promoters","TE"),

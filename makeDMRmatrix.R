@@ -21,84 +21,78 @@ merge.cols <- function(filepath, colm) {
   return(mylist)
 }
 
-
-makeDMRmatrix <- function(context, chr, samplefile, input.dir, out.dir) {
-  
+makeDMRmatrix <- function(context, samplefiles, input.dir, out.dir) {
   # Read the sample file with filenames
-  samplelist <- fread(samplefile, header=T)
-  
-  for (i in  1:length(context)){
+  samplelist <- fread(samplefiles, header=T)
+  for (j in  1:length(context)){
     
-    for (j in 1:length(chr)){
+    # list all Region files in the input directory
+    extractflist <- list.files(input.dir, pattern=paste0(context[j],".txt"), full.names=TRUE)
+    
+    #extract file subsets for construction of DMRmatrix
+    if (length(extractflist) != 0){
+      mynames <- gsub(paste0("_", context[j], ".txt$"), "", basename(extractflist))
       selectlist <- list()
-      cat(paste0("Extracting region files for ", chr[j], " ", context[i], "\n"), sep = "")
-      
-      # list all Region files in the input directory
-      extractflist <- list.files(input.dir, pattern=paste0(chr[j],"_",context[i],".txt"), full.names=TRUE)
-      
-      if (length(extractflist) != 0){
-        mynames <- gsub(paste0("_", chr[j], "_", context[i], ".txt$"), "", basename(extractflist))
-        
-        for (a1 in seq_along(mynames)){
-          as <- samplelist[grepl(mynames[a1], samplelist$file),]
-          as$full.path.regfile <- grep(paste0(mynames[a1], "_", chr[j], "_", context[i]), extractflist, value=TRUE)
-          selectlist[[a1]] <- as
-        }
-        flist <- rbindlist(selectlist)
-        print(flist)
-        
-        # Assign unique names for samples with or without replicate data
-        if (!is.null(flist$replicate)) {
-          cat(paste0("Input data with replicates....creating unique sample names\n"), sep = "")
-          flist$name <- paste0(flist$sample,"_", flist$replicate)
-        } else {
-          flist$name <- samplelist$sample 
-        }
-        
-        cat(paste0("Now, constructing DMR matrix\n"), sep = "")
-        
-        # merge samples by Chr coordinates
-        #(column 6) state-calls and (column 7) rc.meth.lvl
-        mydf <- merge.cols(filepath=flist$full.path.regfile, colm=c(6, 7))
-        
-        # list containing state calls
-        status.collect <- mydf[[1]]
-        # renaming file names with sample names
-        for (a in 4:length(colnames(status.collect))) {
-          for (n in 1:length(flist$name)) {
-            if (colnames(status.collect)[a] == basename(flist$full.path.regfile)[n]) {
-              colnames(status.collect)[a] = flist$name[n]
-            }
-          }
-        }
-        # list containing rcmethlvls
-        rc.methlevel.collect <- mydf[[2]]
-        # renaming file names with sample names
-        for (a in 4:length(colnames(rc.methlevel.collect))) {
-          for (n in 1:length(flist$name)) {
-            if (colnames(rc.methlevel.collect)[a] == basename(flist$full.path.regfile)[n]) {
-              colnames(rc.methlevel.collect)[a] = flist$name[n]
-            }
-          }
-        }
-        
-        names(status.collect)[1] <- "seqnames"
-        names(status.collect)[2] <- "start"
-        names(status.collect)[3] <- "end"
-        
-        names(rc.methlevel.collect)[1] <- "seqnames"
-        names(rc.methlevel.collect)[2] <- "start"
-        names(rc.methlevel.collect)[3] <- "end"
-        
-        cat("\n")
-        cat(paste0("Writing output....\n"), sep = "")
-        fwrite(x=status.collect, file=paste0(out.dir,"/", chr[j], "_", context[i],"_state-calls.txt"),
-               quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
-        fwrite(x=rc.methlevel.collect, file=paste0(out.dir,"/", chr[j], "_", context[i],"_rcmethlvl.txt"), 
-               quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
-      } else{
-        cat("Files do not exist\n")
+      for (a1 in seq_along(mynames)){
+        as <- samplelist[grepl(mynames[a1], samplelist$file),]
+        as$full.path.regfile <- grep(paste0(mynames[a1], "_", context[j]), extractflist, value=TRUE)
+        selectlist[[a1]] <- as
       }
+      flist <- rbindlist(selectlist)
+      print(flist)
+      
+      # Assign unique names for samples with or without replicate data
+      if (!is.null(flist$replicate)) {
+        cat(paste0("Input data with replicates....creating unique sample names\n"), sep = "")
+        flist$name <- paste0(flist$sample,"_", flist$replicate)
+      } else {
+        flist$name <- flist$sample 
+      }
+      
+      cat(paste0("Now, constructing DMR matrix\n"), sep = "")
+      
+      # merge samples by Chr coordinates
+      #(column 6) state-calls and (column 7) rc.meth.lvl
+      mydf <- merge.cols(filepath=flist$full.path.regfile, colm=c(6, 7))
+      
+      # list containing state calls
+      status.collect <- mydf[[1]]
+      # renaming file names with sample names
+      for (a in 4:length(colnames(status.collect))) {
+        for (n in 1:length(flist$name)) {
+          if (colnames(status.collect)[a] == basename(flist$full.path.regfile)[n]) {
+            colnames(status.collect)[a] = flist$name[n]
+          }
+        }
+      }
+      # list containing rcmethlvls
+      rc.methlevel.collect <- mydf[[2]]
+      # renaming file names with sample names
+      for (a in 4:length(colnames(rc.methlevel.collect))) {
+        for (n in 1:length(flist$name)) {
+          if (colnames(rc.methlevel.collect)[a] == basename(flist$full.path.regfile)[n]) {
+            colnames(rc.methlevel.collect)[a] = flist$name[n]
+          }
+        }
+      }
+      
+      names(status.collect)[1] <- "seqnames"
+      names(status.collect)[2] <- "start"
+      names(status.collect)[3] <- "end"
+      
+      names(rc.methlevel.collect)[1] <- "seqnames"
+      names(rc.methlevel.collect)[2] <- "start"
+      names(rc.methlevel.collect)[3] <- "end"
+      
+      cat("\n")
+      cat(paste0("Writing output....\n"), sep = "")
+      fwrite(x=status.collect, file=paste0(out.dir,"/", context[j],"_state-calls.txt"),
+             quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
+      fwrite(x=rc.methlevel.collect, file=paste0(out.dir,"/", context[j],"_rcmethlvl.txt"), 
+             quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
+    } else{
+      cat(paste0("Files for context ",context[j]," do not exist\n"), sep="")
     }
   }
 }
+
