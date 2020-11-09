@@ -84,7 +84,7 @@ merge.bins <- function(rcmethlvl, statecalls, gap){
     for (x in 1:length(mycols)){
       eval(parse(text=paste0("out$", mycols[x], " = mean(u$", mycols[x], ")")))
     }
-    out
+    return(out)
   }
   
   cat(paste0("Merging overlapping and consecutive bins......\n"))
