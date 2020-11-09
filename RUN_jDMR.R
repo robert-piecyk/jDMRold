@@ -7,7 +7,7 @@ library(methimpute)
 library(stringr)
 
 #-----------------------------------------------------------------------------
-# Run Methimpute for cytosine regions
+# Step1: Run Methimpute for cytosine regions
 #-----------------------------------------------------------------------------
 source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/globFun.R"))
 source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/MethimputeReg.R"))
@@ -49,7 +49,7 @@ runMethimputeGrid(out.dir=myoutput,
                   context=c("CG","CHG","CHH"))
 
 #-----------------------------------------------------------------------------
-# Run DMR Matrix
+# Step2: Run DMR Matrix
 #-----------------------------------------------------------------------------
 rm(list=ls())
 
@@ -66,7 +66,7 @@ makeDMRmatrix(context=c("CG","CHG","CHH"),
               out.dir=mydir)
 
 #-----------------------------------------------------------------------------
-# Run Filter DMR Matrix
+# Step3: Run Filter DMR Matrix
 #-----------------------------------------------------------------------------
 rm(list=ls())
 
@@ -106,7 +106,7 @@ filterDMRmatrix(replicate.consensus=1,
 
 
 #-----------------------------------------------------------------------------
-# Run Annotate DMRs
+# Step4: Run Annotate DMRs
 #-----------------------------------------------------------------------------
 rm(list=ls())
 library(ggplot2)
@@ -139,8 +139,8 @@ annotateDMRs(gff.files=c(gff.AT, gff.TE, gff.pr),
              out.dir=out.dir)
 
 #-----------------------------------------------------------------------------
-# Methimpute to BedGraph format. 
-# Converts Region level output files to Bedgraph 
+# Step 6: Methimpute to BedGraph format. 
+# Converts Region level Methimpute output files to Bedgraph 
 # The bedgraph outputs can be further converted to bigwig using MethylStar
 #-----------------------------------------------------------------------------
 rm(list=ls())
