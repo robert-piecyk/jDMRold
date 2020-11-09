@@ -9,18 +9,18 @@ library(stringr)
 #-----------------------------------------------------------------------------
 # Run Methimpute for cytosine regions
 #-----------------------------------------------------------------------------
-source(paste0(Sys.getenv("HOME"),"/test/jDMR-scripts/globFun.R"))
-source(paste0(Sys.getenv("HOME"),"/test/jDMR-scripts/MethimputeReg.R"))
-source(paste0(Sys.getenv("HOME"),"/test/jDMR-scripts/runMethimpute.R"))
+source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/globFun.R"))
+source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/MethimputeReg.R"))
+source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/runMethimpute.R"))
 
 #Input files: 
 #-----------------------------------------------------------------------------
 ##Output directory
-myoutput <- "/home/rashmi/test/jDMR-output"
+myoutput <- "/home/rashmi/jDMR-output"
 
 ##list containing filenames with full PATH.
 ##Note that Methimpute files should have prefix "methylome" and suffix "All.txt"
-filelist <- "/home/rashmi/listFiles-AT.fn"
+filelist <- "/home/rashmi/DMR-Analysis/listFiles-AT.fn"
 
 #-----------------------------------------------------------------------------
 #Run (U,M,I) 3-state call with include.intermediate=TRUE
@@ -28,7 +28,7 @@ filelist <- "/home/rashmi/listFiles-AT.fn"
 
 #Region DMRs
 ##Folder containing Cytosine regions as Rdata files 
-Regionsfolder <- "/home/rashmi/jDMR-scripts/min.C_5/fp_0.1"
+Regionsfolder <- "/home/rashmi/jDMR-Analysis/min.C_5/fp_0.1"
 runMethimputeRegions(Regionfiles=Regionsfolder,
                      samplefiles=filelist,
                      genome="Arabidopsis",
@@ -54,10 +54,10 @@ runMethimputeGrid(out.dir=myoutput,
 rm(list=ls())
 
 # makeDMRmatrix: for both population level and  pairwise control-Treatment data
-source(paste0(Sys.getenv("HOME"),"/test/jDMR-scripts/makeDMRmatrix.R"))
+source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/makeDMRmatrix.R"))
 
-mydir <- "/home/rashmi/test/jDMR-output"
-filelist <- "/home/rashmi/listFiles-AT.fn"
+mydir <- "/home/rashmi/jDMR-output"
+filelist <- "/home/rashmi/DMR-Analysis/listFiles-AT.fn"
 
 # make binary & rc.meth.lvl matrix
 makeDMRmatrix(context=c("CG","CHG","CHH"),
@@ -70,10 +70,10 @@ makeDMRmatrix(context=c("CG","CHG","CHH"),
 #-----------------------------------------------------------------------------
 rm(list=ls())
 
-source(paste0(Sys.getenv("HOME"),"/test/jDMR-scripts/filterDMRmatrix.R"))
-source(paste0(Sys.getenv("HOME"),"/test/jDMR-scripts/globFun.R"))
+source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/filterDMRmatrix.R"))
+source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/globFun.R"))
 
-data.dir <- "/home/rashmi/test/jDMR-output/mysamples"
+data.dir <- "/home/rashmi/jDMR-output/mysamples"
 
 # either specify value or set replicate.consensus=NULL or epiMAF.cutoff=NULL. Please run filterDMRmatrix function based on the type of data you have.
 
@@ -116,12 +116,12 @@ library(tidyr)
 library(dplyr)
 
 #Load source code
-source(paste0(Sys.getenv("HOME"),"/test/jDMR-scripts/annotateDMRs.R", sep=""))
+source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/annotateDMRs.R", sep=""))
 
-wd ="/home/rashmi/test/jDMR-scripts"
-#Please supply the text files to be annotated in a separate folder. In the case of gridDMR supply the (*merged.txt) files
-input.dir <- "/home/rashmi/test/jDMR-output/AT50/test"
-out.dir <- "/home/rashmi/test/jDMR-output/AT50/test"
+wd ="/home/rashmi"
+#Please supply the text files to be annotated in a separate folder. For e.g I make a new folder "test". In the case of gridDMR supply the (*merged.txt) files
+input.dir <- "/home/rashmi/test"
+out.dir <- "/home/rashmi/test"
 
 gff.AT <- paste0(wd, "/Annotations/Arabidopsis_thaliana.TAIR10.47.gff3", sep="")
 gff.TE <- paste0(wd, "/Annotations/TAIR10_TE.gff3", sep="")
