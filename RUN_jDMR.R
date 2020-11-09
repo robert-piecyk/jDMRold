@@ -139,20 +139,23 @@ annotateDMRs(gff.files=c(gff.AT, gff.TE, gff.pr),
              out.dir=out.dir)
 
 #-----------------------------------------------------------------------------
-# Methimpute to BedGraph format. This is only for Region level output files
+# Methimpute to BedGraph format. 
+# Converts Region level output files to Bedgraph 
 # The bedgraph outputs can be further converted to bigwig using MethylStar
 #-----------------------------------------------------------------------------
-# rm(list=ls())
-# library(data.table)
-# 
-# source(paste0(Sys.getenv("HOME"),"/basedir/jDMR-scripts/MethimputeRegTobedGraph.R", sep=""))
-# 
-# wd <- "~/basedir/jDMR-output/100win_50Stepsize/all-samples/RegionCalls"
-# myfiles <- list.files(wd, pattern=".txt$", full.names = TRUE)
-# out.dir <- "~/basedir/jDMR-output/100win_50Stepsize/all-samples/bedgraph"
-# 
-# for (i in 1:length(myfiles)) {
-#   MethimputeRegTobedGraph.stateCalls(regfile=myfiles[i],
-#                           out.dir=out.dir)
-# }
+rm(list=ls())
+library(data.table)
+ 
+source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/MethimputeRegTobedGraph.R", sep=""))
+ 
+wd <- "~/jDMR-output/RegionCalls"
+myfiles <- list.files(wd, pattern=".txt$", full.names = TRUE)
+out.dir <- "~/jDMR-output/bedgraph-out"
+ 
+for (i in 1:length(myfiles)) {
+  MethimputeRegTobedGraph.stateCalls(regfile=myfiles[i], out.dir=out.dir)
+}
 
+for (j in 1:length(myfiles)) {
+  MethimputeRegTobedGraph.rcmethlvl(regfile=myfiles[j], out.dir=out.dir)
+}
