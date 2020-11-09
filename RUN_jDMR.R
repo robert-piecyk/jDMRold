@@ -119,7 +119,7 @@ library(dplyr)
 source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/annotateDMRs.R", sep=""))
 
 wd ="/home/rashmi"
-#Please supply the text files to be annotated in a separate folder. For e.g I make a new folder "test". In the case of gridDMR supply the (*merged.txt) files
+#Please supply the text files to be annotated in a separate folder. For e.g I make a new folder "mysamples". In the case of gridDMR supply the (*merged.txt) files by moving them to "mysamples" folder
 input.dir <- "/home/rashmi/jDMR-output/mysamples"
 out.dir <- "/home/rashmi/jDMR-output/mysamples"
 
