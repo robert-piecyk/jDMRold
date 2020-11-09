@@ -16,7 +16,10 @@ modified.estimateTransDist <- function(distcor, skip=2, plot.parameters=TRUE) {
         }
       }
       if (c1 <= c2) {
-        df <- data.frame(distance = as.numeric(dimnames(cor.array)[[3]]), correlation = cor.array[c1,c2,,'correlation'], weight = cor.array[c1,c2,,'weight'], from = contexts[c1], to = contexts[c2])
+        df <- data.frame(distance = as.numeric(dimnames(cor.array)[[3]]), 
+          correlation = cor.array[c1,c2,,'correlation'], 
+          weight = cor.array[c1,c2,,'weight'], 
+          from = contexts[c1], to = contexts[c2])
         
         ## Fit
         y <- df$correlation[(skip+1):nrow(df)]
@@ -108,10 +111,9 @@ modifiedExportMethylome <- function(model, out.dir, context, name) {
 
 #--------------------------------------------------------------------------
 
-makeRegionsImpute <- function(df, context, refRegion) {
+makeRegionsImpute <- function(df, context, refRegion, mincov, nCytosines) {
+  
   #regions file
-  #data <- dget(regionFile)
-  #data <- refRegion
   tmp_reg <- dget(refRegion)
   data <- as.data.frame(tmp_reg$reg.obs)
   #colnames(data)[which(names(data) == "cluster.size")] <- "cluster.length"
@@ -121,21 +123,35 @@ makeRegionsImpute <- function(df, context, refRegion) {
   
   #remove Mt and chloroplast coordinates. Following is for Arabidopsis only
   ref_data <- ref_data %>% filter(ref_data$V1 != "M" & ref_data$V1 != "C")
+  
+  #filtering by coverage
+  if (mincov>0){
+    cat(paste0("Filtering for coverage: ", mincov,"\n"), sep = "")
+    ref_data <- ref_data[which(ref_data$V6 >= mincov),]
+  }
+  
   ref_data <- ref_data[which(ref_data$V4==context),]
   
   data_gr <- GRanges(seqnames=data$chr,
                      ranges=IRanges(start=data$start, end=data$end),
                      clusterlen=data$cluster.length,
                      context=as.factor(context))
-
+  
   ref_gr <- GRanges(seqnames=ref_data$V1,
                     ranges=IRanges(start=ref_data$V2, width=1),
                     context=as.factor(context),
                     methylated=ref_data$V5,
                     total=ref_data$V6)
   
-  counts <- array(NA, dim=c(length(data_gr), 2),
-                  dimnames=list(NULL, c("methylated", "total")))
+  data_gr$cytosineCount <- countOverlaps(data_gr, ref_gr)
+  
+  #filtering by number of cytosines
+  if (nCytosines>0){
+    cat(paste0("Minimum cytosines covered per region: ", nCytosines,"\n"), sep = "")
+    data_gr <- data_gr[which(data_gr$cytosineCount >= nCytosines),]
+  }
+  
+  counts <- array(NA, dim=c(length(data_gr), 2), dimnames=list(NULL, c("methylated", "total")))
   
   overlaps <- findOverlaps(ref_gr, data_gr)
   
@@ -165,8 +181,9 @@ makeRegionsImpute <- function(df, context, refRegion) {
 
 #--------------------------------------------------------------------------
 
-makeMethimpute<-function(df, context, fit.plot, merge.chr, fit.name, refRegion, include.intermediate, probability, out.dir, name){
-  methylome.data <- makeRegionsImpute(df, context, refRegion)
+makeMethimpute <- function(df, context, fit.plot, merge.chr, fit.name, refRegion, 
+                         include.intermediate, probability, out.dir, name, mincov, nCytosines){
+  methylome.data <- makeRegionsImpute(df, context, refRegion, mincov, nCytosines)
   if (!is.null(methylome.data$counts)) {
     quant.cutoff <- as.numeric(quantile(methylome.data$counts[,"total"], probs = c(0.96), na.rm=TRUE))
     distcor <- distanceCorrelation(methylome.data, distances=0:100)
@@ -186,14 +203,9 @@ makeMethimpute<-function(df, context, fit.plot, merge.chr, fit.name, refRegion, 
                              max.iter = Inf,
                              include.intermediate = include.intermediate,
                              update = probability)
-    if (merge.chr==FALSE){
-      methFile <- modifiedExportMethylome(model=model$data, out.dir=out.dir, context=context, name=name)
-      return(methFile)
-    } else {
-      mymodel <- model$data
-      return(mymodel)
-    }
-    rm(model, methfile) 
+    
+    methFile <- modifiedExportMethylome(model=model$data, out.dir=out.dir, context=context, name=name)
+    rm(model) 
   }
   rm(methylome.data)
 }

@@ -26,7 +26,7 @@ makeDMRmatrix <- function(context, samplefiles, input.dir, out.dir) {
   samplelist <- fread(samplefiles, header=T)
   for (j in  1:length(context)){
     
-    # list all Region files in the input directory
+    # list all files in the input directory
     extractflist <- list.files(input.dir, pattern=paste0(context[j],".txt"), full.names=TRUE)
     
     #extract file subsets for construction of DMRmatrix
@@ -35,32 +35,32 @@ makeDMRmatrix <- function(context, samplefiles, input.dir, out.dir) {
       selectlist <- list()
       for (a1 in seq_along(mynames)){
         as <- samplelist[grepl(mynames[a1], samplelist$file),]
-        as$full.path.regfile <- grep(paste0(mynames[a1], "_", context[j]), extractflist, value=TRUE)
+        as$full.path.MethReg <- grep(paste0(mynames[a1], "_", context[j]), extractflist, value=TRUE)
         selectlist[[a1]] <- as
       }
       flist <- rbindlist(selectlist)
-      print(flist)
+      #print(flist)
       
       # Assign unique names for samples with or without replicate data
       if (!is.null(flist$replicate)) {
-        cat(paste0("Input data with replicates....creating unique sample names\n"), sep = "")
+        cat(paste0("Running context ", context[j], ". Input data with replicates, creating unique sample names\n"), sep = "")
         flist$name <- paste0(flist$sample,"_", flist$replicate)
       } else {
         flist$name <- flist$sample 
       }
       
-      cat(paste0("Now, constructing DMR matrix\n"), sep = "")
+      cat(paste0("Now, constructing DMR matrix for ", context[j],"\n"), sep = "")
       
       # merge samples by Chr coordinates
       #(column 6) state-calls and (column 7) rc.meth.lvl
-      mydf <- merge.cols(filepath=flist$full.path.regfile, colm=c(6, 7))
+      mydf <- merge.cols(filepath=flist$full.path.MethReg, colm=c(6, 7))
       
       # list containing state calls
       status.collect <- mydf[[1]]
       # renaming file names with sample names
       for (a in 4:length(colnames(status.collect))) {
         for (n in 1:length(flist$name)) {
-          if (colnames(status.collect)[a] == basename(flist$full.path.regfile)[n]) {
+          if (colnames(status.collect)[a] == basename(flist$full.path.MethReg)[n]) {
             colnames(status.collect)[a] = flist$name[n]
           }
         }
@@ -70,7 +70,7 @@ makeDMRmatrix <- function(context, samplefiles, input.dir, out.dir) {
       # renaming file names with sample names
       for (a in 4:length(colnames(rc.methlevel.collect))) {
         for (n in 1:length(flist$name)) {
-          if (colnames(rc.methlevel.collect)[a] == basename(flist$full.path.regfile)[n]) {
+          if (colnames(rc.methlevel.collect)[a] == basename(flist$full.path.MethReg)[n]) {
             colnames(rc.methlevel.collect)[a] = flist$name[n]
           }
         }
@@ -85,10 +85,9 @@ makeDMRmatrix <- function(context, samplefiles, input.dir, out.dir) {
       names(rc.methlevel.collect)[3] <- "end"
       
       cat("\n")
-      cat(paste0("Writing output....\n"), sep = "")
-      fwrite(x=status.collect, file=paste0(out.dir,"/", context[j],"_state-calls.txt"),
+      fwrite(x=status.collect, file=paste0(out.dir,"/", context[j],"_StateCalls.txt"),
              quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
-      fwrite(x=rc.methlevel.collect, file=paste0(out.dir,"/", context[j],"_rcmethlvl.txt"), 
+      fwrite(x=rc.methlevel.collect, file=paste0(out.dir,"/", context[j],"_rcMethlvl.txt"), 
              quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
     } else{
       cat(paste0("Files for context ",context[j]," do not exist\n"), sep="")

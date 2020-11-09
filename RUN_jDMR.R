@@ -9,30 +9,44 @@ library(stringr)
 #-----------------------------------------------------------------------------
 # Run Methimpute for cytosine regions
 #-----------------------------------------------------------------------------
-source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts-local/DMRs/globFun.R"))
-source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts-local/DMRs/MethimputeReg.R"))
-source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts-local/DMRs/runMethimputeRegions.R"))
+source(paste0(Sys.getenv("HOME"),"/test/jDMR-scripts/globFun.R"))
+source(paste0(Sys.getenv("HOME"),"/test/jDMR-scripts/MethimputeReg.R"))
+source(paste0(Sys.getenv("HOME"),"/test/jDMR-scripts/runMethimpute.R"))
 
-#Input files required:
+#Input files: 
 #-----------------------------------------------------------------------------
-##Folder containing Cytosine regions as Rdata files 
-Regionsfolder <- "/Users/rashmi/basedir/DMRcaller/PRODUCED/min.C_5/fp_0.1"
-
 ##Output directory
-myoutput <- "/Users/rashmi/basedir/DMRcaller/jDMR-output"
+myoutput <- "/home/rashmi/test/jDMR-output"
 
-##list containing filenames with full PATH.Note that Methimpute files should have prefix "methylome" and suffix "All.txt"
-filelist <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/listFiles.fn"
+##list containing filenames with full PATH.
+##Note that Methimpute files should have prefix "methylome" and suffix "All.txt"
+filelist <- "/home/rashmi/listFiles-AT.fn"
 
 #-----------------------------------------------------------------------------
 #Run (U,M,I) 3-state call with include.intermediate=TRUE
 #probability = one of c("independent","constrained").ignore for now.
 
+#Region DMRs
+##Folder containing Cytosine regions as Rdata files 
+Regionsfolder <- "/home/rashmi/jDMR-scripts/min.C_5/fp_0.1"
 runMethimputeRegions(Regionfiles=Regionsfolder,
                      samplefiles=filelist,
+                     genome="Arabidopsis",
                      context=c("CG","CHG","CHH"),
-                     run.chr.separate=TRUE,
                      out.dir=myoutput)
+
+#grid DMRs
+#Here you need to specify the chromosome lengths. For Arabidopsis you can use the ones provided.
+chrs <- c(chr1=30427671, chr2=19698289, chr3=23459830, chr4=18585056, chr5=26975502)
+runMethimputeGrid(out.dir=myoutput, 
+                  chrfile=chrs,
+                  win=100, 
+                  step=50,
+                  genome="Arabidopsis",
+                  samplefiles=filelist,
+                  mincov=10,
+                  nCytosines=10,
+                  context=c("CG","CHG","CHH"))
 
 #-----------------------------------------------------------------------------
 # Run DMR Matrix
@@ -40,10 +54,10 @@ runMethimputeRegions(Regionfiles=Regionsfolder,
 rm(list=ls())
 
 # makeDMRmatrix: for both population level and  pairwise control-Treatment data
-source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts-local/DMRs/makeDMRmatrix.R"))
+source(paste0(Sys.getenv("HOME"),"/test/jDMR-scripts/makeDMRmatrix.R"))
 
-mydir <- "/Users/rashmi/basedir/DMRcaller/jDMR-output"
-filelist <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/listFiles.fn"
+mydir <- "/home/rashmi/test/jDMR-output"
+filelist <- "/home/rashmi/listFiles-AT.fn"
 
 # make binary & rc.meth.lvl matrix
 makeDMRmatrix(context=c("CG","CHG","CHH"),
@@ -56,57 +70,71 @@ makeDMRmatrix(context=c("CG","CHG","CHH"),
 #-----------------------------------------------------------------------------
 rm(list=ls())
 
-source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts-local/DMRs/filterDMRmatrix.R"))
-source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts-local/DMRs/globFun.R"))
+source(paste0(Sys.getenv("HOME"),"/test/jDMR-scripts/filterDMRmatrix.R"))
+source(paste0(Sys.getenv("HOME"),"/test/jDMR-scripts/globFun.R"))
 
-data.dir <- "/Users/rashmi/basedir/DMRcaller/jDMR-output"
+data.dir <- "/home/rashmi/test/jDMR-output/mysamples"
 
+# either specify value or set replicate.consensus=NULL or epiMAF.cutoff=NULL. Please run filterDMRmatrix function based on the type of data you have.
+
+# 1) Region DMRs for Population data
+filterDMRmatrix(replicate.consensus=NULL,
+                gridDMR=FALSE,
+                #epiMAF.cutoff is only for population data
+                epiMAF.cutoff = 0.33,
+                data.dir=data.dir)
+
+# 2) Region DMRs for pairwise control-Treatment data
 # for datasets with just 2 replicates (pairwise control-Treatment data) please set replicate.consensus value to 1.
-# either specify value or set replicate.consensus=NULL or epiMAF.cutoff=NULL
 filterDMRmatrix(replicate.consensus=1,
-                #epiMAF.cutoff = 0.33,
+                gridDMR=FALSE,
                 epiMAF.cutoff=NULL,
                 data.dir=data.dir)
+
+# 3) grid DMRs for Population data
+filterDMRmatrix(replicate.consensus=NULL,
+                gridDMR=TRUE,
+                #epiMAF.cutoff is only for population data
+                epiMAF.cutoff=0.33,
+                data.dir=data.dir)
+
+# 4) grid DMRs for pairwise control-Treatment data
+filterDMRmatrix(replicate.consensus=1,
+                gridDMR=TRUE,
+                epiMAF.cutoff=NULL,
+                data.dir=data.dir)
+
 
 #-----------------------------------------------------------------------------
 # Run Annotate DMRs
 #-----------------------------------------------------------------------------
 rm(list=ls())
 library(ggplot2)
+library(GenomicRanges)
 library(rtracklayer)
 library(tidyr)
+library(dplyr)
 
 #Load source code
-source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/annotateDMRs.R", sep=""))
+source(paste0(Sys.getenv("HOME"),"/test/jDMR-scripts/annotateDMRs.R", sep=""))
 
-# gff3 annotation files. Supply as one gff3 file
-wd ="/Users/rashmi/basedir/DMRcaller"
-gff.AT <- paste0(wd, "/Annotations/Arabidopsis_thaliana.TAIR10.43.gff3", sep="")
+wd ="/home/rashmi/test/jDMR-scripts"
+#Please supply the text files to be annotated in a separate folder. In the case of gridDMR supply the (*merged.txt) files
+input.dir <- "/home/rashmi/test/jDMR-output/AT50/test"
+out.dir <- "/home/rashmi/test/jDMR-output/AT50/test"
+
+gff.AT <- paste0(wd, "/Annotations/Arabidopsis_thaliana.TAIR10.47.gff3", sep="")
 gff.TE <- paste0(wd, "/Annotations/TAIR10_TE.gff3", sep="")
 gff.pr <- paste0(wd, "/Annotations/TAIR10_promoters.gff3",sep="")
-gff <- c(gff.AT, gff.TE, gff.pr)
-input.gff <- lapply(gff, function(x){ 
-  import.gff3(x, colnames=c("type", "ID")) 
-})
-merged.gff <- do.call(c, input.gff)
 
-# Check Annotation levels here. Supply annotation terms for e.g genes, TEs
-levels(elementMetadata(merged.gff)[,"type"])
-#available annotations
+#you can specify the following available annotations. if you have your custom file let me know.
 #"chromosome","gene","mRNA","five_prime_UTR","exon","CDS",
 #"three_prime_UTR","ncRNA_gene","lnc_RNA","miRNA","tRNA","ncRNA",
 #"snoRNA","snRNA","rRNA","TE","promoters"
 
-# Path to filtered DMR files with 3 columns: seqnames, start, end
-inputf <- "/Users/rashmi/basedir/DMRcaller/CytosineRegions_background/FP0.1"
-myfiles <- list.files(inputf, pattern="*.txt", full.names = TRUE)
-
-# Output Path
-out.dir <- "/Users/rashmi/basedir/DMRcaller/CytosineRegions_background/FP0.1"
-
-annotateDMRs(gff=merged.gff,
+annotateDMRs(gff.files=c(gff.AT, gff.TE, gff.pr),
              annotation=c("gene","promoters","TE"),
-             file.list=myfiles,
+             input.dir=input.dir,
              gff3.out=TRUE,
              out.dir=out.dir)
 
@@ -114,17 +142,17 @@ annotateDMRs(gff=merged.gff,
 # Methimpute to BedGraph format. This is only for Region level output files
 # The bedgraph outputs can be further converted to bigwig using MethylStar
 #-----------------------------------------------------------------------------
-rm(list=ls())
-library(data.table)
-
-source(paste0(Sys.getenv("HOME"),"/basedir/DMRcaller/makeRegScripts/DMRs/MethimputeRegTobedGraph.R", sep=""))
-
-wd <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/RegionCalls"
-myfiles <- list.files(wd, pattern=".txt$", full.names = TRUE)
-out.dir <- "/Users/rashmi/basedir/DMRcaller/jDMR-output/bedgraph"
-
-for (i in 1:length(myfiles)) {
-  MethimputeRegTobedGraph(regfile=myfiles[i],
-                          out.dir=out.dir)
-}
+# rm(list=ls())
+# library(data.table)
+# 
+# source(paste0(Sys.getenv("HOME"),"/basedir/jDMR-scripts/MethimputeRegTobedGraph.R", sep=""))
+# 
+# wd <- "~/basedir/jDMR-output/100win_50Stepsize/all-samples/RegionCalls"
+# myfiles <- list.files(wd, pattern=".txt$", full.names = TRUE)
+# out.dir <- "~/basedir/jDMR-output/100win_50Stepsize/all-samples/bedgraph"
+# 
+# for (i in 1:length(myfiles)) {
+#   MethimputeRegTobedGraph.stateCalls(regfile=myfiles[i],
+#                           out.dir=out.dir)
+# }
 
