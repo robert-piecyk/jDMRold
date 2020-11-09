@@ -73,7 +73,7 @@ rm(list=ls())
 source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/filterDMRmatrix.R"))
 source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/globFun.R"))
 
-data.dir <- "/home/rashmi/jDMR-output/mysamples"
+data.dir <- "/home/rashmi/jDMR-output"
 
 # either specify value or set replicate.consensus=NULL or epiMAF.cutoff=NULL. Please run filterDMRmatrix function based on the type of data you have.
 
@@ -120,8 +120,8 @@ source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/annotateDMRs.R", sep=""))
 
 wd ="/home/rashmi"
 #Please supply the text files to be annotated in a separate folder. For e.g I make a new folder "test". In the case of gridDMR supply the (*merged.txt) files
-input.dir <- "/home/rashmi/test"
-out.dir <- "/home/rashmi/test"
+input.dir <- "/home/rashmi/jDMR-output/mysamples"
+out.dir <- "/home/rashmi/jDMR-output/mysamples"
 
 gff.AT <- paste0(wd, "/Annotations/Arabidopsis_thaliana.TAIR10.47.gff3", sep="")
 gff.TE <- paste0(wd, "/Annotations/TAIR10_TE.gff3", sep="")
