@@ -1,7 +1,7 @@
 
 filterReplicateConsensus <- function(status.collect, rc.methlevel.collect, replicate.consensus, gap=1){
   
-  pb <- txtProgressBar(min = 1, max = NROW(status.collect), char = "=", style = 3, file = "")
+  pb1 <- txtProgressBar(min = 1, max = NROW(status.collect), char = "=", style = 3, file = "")
   
   if (!is.null(status.collect$epiMAF)){
     status.collect <- status.collect[,-c("epiMAF")]
@@ -27,6 +27,7 @@ filterReplicateConsensus <- function(status.collect, rc.methlevel.collect, repli
       Sys.sleep(1/NROW(status.collect))
       setTxtProgressBar(pb, x)
     }
+    close(pb1)
     #print(df.bind)
     if (sum(df.bind$count)==0)
       dt <- rbind(dt, status.collect[x,])
@@ -45,7 +46,7 @@ filterReplicateConsensus <- function(status.collect, rc.methlevel.collect, repli
 
 filterEpiMAF <- function(mat1, mat2, epiMAF){
   
-  pb <- txtProgressBar(min = 1, max = NROW(mat1), char = "=", style = 3, file = "")
+  pb2 <- txtProgressBar(min = 1, max = NROW(mat1), char = "=", style = 3, file = "")
   mat1$epiMAF <- 0
   
   for (i1 in 1:NROW(mat1)){
@@ -55,8 +56,10 @@ filterEpiMAF <- function(mat1, mat2, epiMAF){
     mat1$epiMAF[i1] <- floorDec(as.numeric(as.character(epiMAF.out)),5)
     
     Sys.sleep(1/NROW(mat1))
-    setTxtProgressBar(pb, i1)
+    setTxtProgressBar(pb2, i1)
   }
+  close(pb2)
+
   df.status.collect <- mat1[which(mat1$epiMAF < epiMAF),]
   if (NROW(df.status.collect) !=0){
     df.rc.methlevel.collect <- mat2 %>% semi_join(df.status.collect, by=c("seqnames","start","end"))
@@ -107,7 +110,7 @@ merge.bins <- function(rcmethlvl, statecalls, gap){
   # split rcmthlvl matrix based on pattterns
   grl <- split(gr2, gr2$pattern)
   
-  pb <- txtProgressBar(min = 1, max = length(grl), char = "=", style = 3, file = "")
+  pb3 <- txtProgressBar(min = 1, max = length(grl), char = "=", style = 3, file = "")
   
   for (x in 1:length(grl)){
     a <- data.frame(grl[[x]])
@@ -118,8 +121,10 @@ merge.bins <- function(rcmethlvl, statecalls, gap){
     mylist[[x]] <- df
     
     Sys.sleep(1/length(grl))
-    setTxtProgressBar(pb, x)
+    setTxtProgressBar(pb3, x)
   }
+  close(pb3)
+  
   f.df <- unlist(mylist)
   f.df <- do.call(rbind, lapply(f.df, data.frame))
   f.df <- f.df[order(f.df[,1], f.df[,2]),]
