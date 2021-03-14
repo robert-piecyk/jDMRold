@@ -1,6 +1,7 @@
 
-#--------------------------------------------------------------------------
 filterReplicateConsensus <- function(status.collect, rc.methlevel.collect, replicate.consensus, gap=1){
+  
+  pb <- txtProgressBar(min = 1, max = NROW(status.collect), char = "=", style = 3, file = "")
   
   if (!is.null(status.collect$epiMAF)){
     status.collect <- status.collect[,-c("epiMAF")]
@@ -22,6 +23,9 @@ filterReplicateConsensus <- function(status.collect, rc.methlevel.collect, repli
         df.bind$count[df.bind$sample==m] <- 0
       else
         df.bind$count[df.bind$sample==m] <- 1
+      
+      Sys.sleep(1/NROW(status.collect))
+      setTxtProgressBar(pb, x)
     }
     #print(df.bind)
     if (sum(df.bind$count)==0)
@@ -29,28 +33,40 @@ filterReplicateConsensus <- function(status.collect, rc.methlevel.collect, repli
   })
   status.collect <- q[-which(sapply(q, is.null))]
   df.status.collect <- rbindlist(status.collect)
-  
+  if (NROW(df.status.collect) !=0){
   df.rc.methlevel.collect <- rc.methlevel.collect %>% semi_join(df.status.collect, by=c("seqnames","start","end"))
   return(list(df.status.collect, df.rc.methlevel.collect))
-}
-
-#--------------------------------------------------------------------------
-filterEpiMAF <- function(status.collect, rc.methlevel.collect, epiMAF.cutoff){
-  status.collect$epiMAF <- 0
-  
-  for (i1 in 1:NROW(status.collect)){
-    mypattern <- unlist(status.collect[i1, 4:(NCOL(status.collect)-1)])
-    mycount <- table(mypattern)
-    epiMAF <- min(mycount)/length(mypattern)
-    status.collect$epiMAF[i1] <- floorDec(as.numeric(as.character(epiMAF)),5)
+  } else {
+    message("\nEmpty dataframe. Nothing to write!")
+    return(NULL)
   }
-  df.status.collect <- status.collect[which(status.collect$epiMAF < epiMAF.cutoff),]
-  
-  df.rc.methlevel.collect <- rc.methlevel.collect %>% semi_join(df.status.collect, by=c("seqnames","start","end"))
-  return(list(df.status.collect, df.rc.methlevel.collect))
 }
 
-#--------------------------------------------------------------------------
+
+filterEpiMAF <- function(mat1, mat2, epiMAF){
+  
+  pb <- txtProgressBar(min = 1, max = NROW(mat1), char = "=", style = 3, file = "")
+  mat1$epiMAF <- 0
+  
+  for (i1 in 1:NROW(mat1)){
+    mypattern <- unlist(mat1[i1, 4:(NCOL(mat1)-1)])
+    mycount <- table(mypattern)
+    epiMAF.out <- min(mycount)/length(mypattern)
+    mat1$epiMAF[i1] <- floorDec(as.numeric(as.character(epiMAF.out)),5)
+    
+    Sys.sleep(1/NROW(mat1))
+    setTxtProgressBar(pb, i1)
+  }
+  df.status.collect <- mat1[which(mat1$epiMAF < epiMAF),]
+  if (NROW(df.status.collect) !=0){
+    df.rc.methlevel.collect <- mat2 %>% semi_join(df.status.collect, by=c("seqnames","start","end"))
+    return(list(df.status.collect, df.rc.methlevel.collect))
+  } else {
+    message("\nEmpty dataframe. Nothing to write!")
+    return(NULL)
+  }
+}
+
 merge.bins <- function(rcmethlvl, statecalls, gap){
   mylist <- list()
   result <- list()
@@ -87,15 +103,22 @@ merge.bins <- function(rcmethlvl, statecalls, gap){
     return(out)
   }
   
-  cat(paste0("Merging overlapping and consecutive bins......\n"))
+  cat(paste0("Now, Merging overlapping and consecutive bins...\n"))
   # split rcmthlvl matrix based on pattterns
   grl <- split(gr2, gr2$pattern)
+  
+  pb <- txtProgressBar(min = 1, max = length(grl), char = "=", style = 3, file = "")
+  
   for (x in 1:length(grl)){
     a <- data.frame(grl[[x]])
-    a1 <- a %>% arrange(pattern, start) %>% group_by(pattern) %>% mutate(indx = cumsum(start > lag(end, default = start[1]) + gap))
+    a1 <- a %>% arrange(pattern, start) %>% group_by(pattern) %>% 
+      mutate(indx = cumsum(start > lag(end, default = start[1]) + gap))
     a1.gr <- makeGRangesFromDataFrame(a1, keep.extra.columns=TRUE)
     df <- lapply(split(a1.gr, a1.gr$indx), fn)
     mylist[[x]] <- df
+    
+    Sys.sleep(1/length(grl))
+    setTxtProgressBar(pb, x)
   }
   f.df <- unlist(mylist)
   f.df <- do.call(rbind, lapply(f.df, data.frame))
@@ -107,30 +130,30 @@ merge.bins <- function(rcmethlvl, statecalls, gap){
   return(list(final.status.collect, final.rcmethlvl.collect))
 }
 
-#--------------------------------------------------------------------------
 export.out <- function(out.rcmethlvl, out.statecalls, context, out.name1, out.name2, data.out){
-  fwrite(x=out.statecalls, file=paste0(data.out, "/", context, "_", out.name1, ".txt"), quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
-  fwrite(x=out.rcmethlvl, file=paste0(data.out, "/", context, "_", out.name2, ".txt"), quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
+  fwrite(x=out.statecalls, file=paste0(data.out, "/", context, "_", out.name1, ".txt"), 
+         quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
+  fwrite(x=out.rcmethlvl, file=paste0(data.out, "/", context, "_", out.name2, ".txt"), 
+         quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
 }
 
-#--------------------------------------------------------------------------
 filterDMRmatrix <- function(epiMAF.cutoff, replicate.consensus, gridDMR, data.dir) {
   
   list.status <- list.files(data.dir, pattern="_StateCalls.txt", full.names=TRUE)
   if (length(list.status) != 0){
     for (i in seq_along(list.status)){
       context <- gsub("_StateCalls.txt", "", basename(list.status[i]))
+      cat("\n")
       cat(paste0("Running DMR matrix for ", context, "\n"), sep = "")
       cat("\n")
       
       #----------------------------------------------
       # Removing non-polymorphic/unchanged patterns
       #----------------------------------------------
-      
       status.collect <- fread(list.status[i], header=T)
       rc.methlevel.collect <- fread(paste0(data.dir, "/", context, "_rcMethlvl.txt"), header=T)
       
-      cat(paste0("Removing non-polymorphic patterns......\n"))
+      cat(paste0("Removing non-polymorphic patterns...\n"))
       
       index <- which(rowSums(status.collect[,4:NCOL(status.collect)]) != 0 & 
                        rowSums(status.collect[,4:NCOL(status.collect)]) != NCOL(status.collect)-3)
@@ -138,56 +161,74 @@ filterDMRmatrix <- function(epiMAF.cutoff, replicate.consensus, gridDMR, data.di
       status.collect <- status.collect[index,]
       rc.methlevel.collect <- rc.methlevel.collect[index,]
       
-      #----------------------------------------------
-      # Optional. Filtering out regions with epiMAF < Minor Allele Frequency
-      #----------------------------------------------
-      
-      if (!is.null(epiMAF.cutoff)) {
-        cat(paste0("Filtering for epiMAF......\n"))
-        cat("\n")
-        mydf <- filterEpiMAF(status.collect, rc.methlevel.collect, epiMAF.cutoff)
-        export.out(out.statecalls=mydf[[1]],
-                   out.rcmethlvl=mydf[[2]],
+      if (is.null(epiMAF.cutoff) && is.null(replicate.consensus)) {
+        message("Both, epiMAF and replicate consensus set to NULL")
+        out1=status.collect
+        out2=rc.methlevel.collect
+        export.out(out.statecalls=out1,
+                   out.rcmethlvl=out2,
                    context=context,
                    out.name1="StateCalls-filtered",
                    out.name2="rcMethlvl-filtered",
                    data.out=data.dir)
       }
+      #----------------------------------------------
+      # Optional. Filtering out regions with epiMAF < Minor Allele Frequency
+      #----------------------------------------------
+      if (!is.null(epiMAF.cutoff)) {
+        cat(paste0("Filtering for epiMAF: ", epiMAF.cutoff, "\n"))
+        cat("\n")
+        mydf <- filterEpiMAF(mat1=status.collect, mat2=rc.methlevel.collect, epiMAF=epiMAF.cutoff)
+        if (!is.null(mydf)){
+          # For Population data remove the epiMAF column
+          out1=mydf[[1]][,-c("epiMAF")]
+          out2=mydf[[2]]
+          export.out(out.statecalls=mydf[[1]],
+                     out.rcmethlvl=mydf[[2]],
+                     context=context,
+                     out.name1="StateCalls-filtered",
+                     out.name2="rcMethlvl-filtered",
+                     data.out=data.dir)
+        }
+      } 
       
       #----------------------------------------------
       # Optional. Retaining samples based on replicate.consensus
       #----------------------------------------------
       if (!is.null(replicate.consensus)) {
-        cat(paste0("Filtering for replicate consensus.....\n"))
+        cat(paste0("Filtering for replicate consensus...\n"))
         cat("\n")
         mydf <- filterReplicateConsensus(status.collect, rc.methlevel.collect, replicate.consensus)
-        export.out(out.statecalls=mydf[[1]],
-                   out.rcmethlvl=mydf[[2]],
-                   context=context,
-                   out.name1="StateCalls-filtered",
-                   out.name2="rcMethlvl-filtered",
-                   data.out=data.dir)
+        if (!is.null(mydf)){
+          out1=mydf[[1]]
+          out2=mydf[[2]]
+          export.out(out.statecalls=out1,
+                     out.rcmethlvl=out2,
+                     context=context,
+                     out.name1="StateCalls-filtered",
+                     out.name2="rcMethlvl-filtered",
+                     data.out=data.dir)
+        }
       }
       
       #----------------------------------------------
       # Merging bins
       #----------------------------------------------
-      if (gridDMR==TRUE){
-        if (is.null(epiMAF.cutoff)) {
-          # For pairwise data
-          out <- merge.bins(statecalls=mydf[[1]], rcmethlvl=mydf[[2]], gap=1)
-        } else {
-          # For Population data remove the epiMAF column
-          mydf[[1]] <- mydf[[1]][,-c("epiMAF")]
-          out <- merge.bins(statecalls=mydf[[1]], rcmethlvl=mydf[[2]], gap=1)
+      if (gridDMR==TRUE) {
+        if (exists("out1") && exists("out2")){
+          out <- merge.bins(statecalls=out1, rcmethlvl=out2, gap=1)
+          export.out(out.statecalls=out[[1]],
+                     out.rcmethlvl=out[[2]],
+                     context=context,
+                     out.name1="StateCalls-filtered-merged",
+                     out.name2="rcMethlvl-filtered-merged",
+                     data.out=data.dir)
+        } 
+      } else {
+        message("grid DMR set to FALSE")
         }
-        export.out(out.statecalls=out[[1]],
-                   out.rcmethlvl=out[[2]],
-                   context=context,
-                   out.name1="StateCalls-filtered-merged",
-                   out.name2="rcMethlvl-filtered-merged",
-                   data.out=data.dir)
-      }
     }
-  } else { cat("DMR matrix files do not exist\n") }
+  } else {
+    message("DMR matrix files do not exist!")
+  }
 }

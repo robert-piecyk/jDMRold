@@ -75,35 +75,13 @@ source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/globFun.R"))
 
 data.dir <- "/home/rashmi/jDMR-output"
 
-# either specify value or set replicate.consensus=NULL or epiMAF.cutoff=NULL. Please run filterDMRmatrix function based on the type of data you have.
+## Please run filterDMRmatrix function based on the type of data you have.
 
-# 1) Region DMRs for Population data
-filterDMRmatrix(replicate.consensus=NULL,
-                gridDMR=FALSE,
-                #epiMAF.cutoff is only for population data
-                epiMAF.cutoff = 0.33,
+filterDMRmatrix(replicate.consensus=NULL, # set value if your data is pairwise control-Treatment data or else set to NULL.
+                # For datasets with just 2 replicates,please set replicate.consensus value to 1.
+                gridDMR=TRUE, # if Region DMRs set it to FALSE else if grid DMRs set to TRUE
+                epiMAF.cutoff=NULL, # set to NULL or set epiMAF.cutoff (for population data)
                 data.dir=data.dir)
-
-# 2) Region DMRs for pairwise control-Treatment data
-# for datasets with just 2 replicates (pairwise control-Treatment data) please set replicate.consensus value to 1.
-filterDMRmatrix(replicate.consensus=1,
-                gridDMR=FALSE,
-                epiMAF.cutoff=NULL,
-                data.dir=data.dir)
-
-# 3) grid DMRs for Population data
-filterDMRmatrix(replicate.consensus=NULL,
-                gridDMR=TRUE,
-                #epiMAF.cutoff is only for population data
-                epiMAF.cutoff=0.33,
-                data.dir=data.dir)
-
-# 4) grid DMRs for pairwise control-Treatment data
-filterDMRmatrix(replicate.consensus=1,
-                gridDMR=TRUE,
-                epiMAF.cutoff=NULL,
-                data.dir=data.dir)
-
 
 #-----------------------------------------------------------------------------
 # Step4: Run Annotate DMRs
