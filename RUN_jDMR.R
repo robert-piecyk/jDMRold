@@ -20,7 +20,7 @@ myoutput <- "/home/rashmi/jDMR-output"
 
 ##list containing filenames with full PATH.
 ##Note that Methimpute files should have prefix "methylome" and suffix "All.txt"
-filelist <- "/home/rashmi/DMR-Analysis/listFiles-AT.fn"
+filelist <- "/home/rashmi/DMR-Analysis/listFiles.fn"
 
 #-----------------------------------------------------------------------------
 #Run (U,M,I) 3-state call with include.intermediate=TRUE
@@ -28,7 +28,7 @@ filelist <- "/home/rashmi/DMR-Analysis/listFiles-AT.fn"
 
 #Region DMRs
 ##Folder containing Cytosine regions as Rdata files 
-Regionsfolder <- "/home/rashmi/jDMR-Analysis/min.C_5/fp_0.1"
+Regionsfolder <- "/home/rashmi/DMR-Analysis/min.C_5/Arabidopsis/fp0.01"
 runMethimputeRegions(Regionfiles=Regionsfolder,
                      samplefiles=filelist,
                      genome="Arabidopsis",
