@@ -37,11 +37,11 @@ chrs <- c(chr1=30427671, chr2=19698289, chr3=23459830, chr4=18585056, chr5=26975
 runMethimputeGrid(out.dir=myoutput, 
                   chrfile=chrs,
                   win=100, 
-                  step=50,
+                  step=100,
                   genome="Arabidopsis",
                   samplefiles=filelist,
-                  mincov=10,
-                  nCytosines=10,
+                  mincov=0,
+                  nCytosines=5,
                   context=c("CG","CHG","CHH"))
 
 #-----------------------------------------------------------------------------
