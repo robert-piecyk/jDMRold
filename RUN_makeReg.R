@@ -24,6 +24,16 @@ fp.rate <- 0.01
 
 
 chrfiles <- list.files(fasta.folder, pattern=paste0("*.fa.gz$"), full.names = TRUE)
+
+# I am creating a new folder 'min.C_5' here
+if (!dir.exists(paste0(out.dir, "min.C_5"))) {
+cat(paste0("Creating directory "))
+dir.create(paste0(out.dir, "min.C_5"))
+} else {
+cat("directory exists!")
+}
+
+
 for (i in 1:length(chrfiles)) {
   fasta <-readDNAStringSet(chrfiles[i])
   chr <- gsub(".*chromosome.|\\.fa.gz$", "", basename(chrfiles[i]))
@@ -36,7 +46,7 @@ for (i in 1:length(chrfiles)) {
                            write.output=TRUE))
   
   # Calling regions; calls the file created by CfromFASTAv4 
-  ref.genome <- fread(paste0(out.dir, "cytosine_positions_chr", chr, ".csv", sep=""))
+  ref.genome <- fread(paste0(out.dir, "min.C_5/cytosine_positions_chr", chr, ".csv", sep = ""))
   system.time(makeReg(ref.genome = ref.genome, 
                       contexts = contexts, 
                       makeRegnull = makeNull, 
@@ -46,7 +56,7 @@ for (i in 1:length(chrfiles)) {
                       N.sim.C = "all", 
                       fp.rate=fp.rate, 
                       set.tol=0.01, 
-                      out.dir, 
+                      out.dir=paste0(out.dir, "min.C_5/"), 
                       out.name=out.name))
 }
 
