@@ -33,7 +33,6 @@ dir.create(paste0(out.dir, "min.C_5"))
 cat("directory exists!")
 }
 
-
 for (i in 1:length(chrfiles)) {
   fasta <-readDNAStringSet(chrfiles[i])
   chr <- gsub(".*chromosome.|\\.fa.gz$", "", basename(chrfiles[i]))
@@ -47,6 +46,7 @@ for (i in 1:length(chrfiles)) {
   
   # Calling regions; calls the file created by CfromFASTAv4 
   ref.genome <- fread(paste0(out.dir, "min.C_5/cytosine_positions_chr", chr, ".csv", sep = ""))
+  
   system.time(makeReg(ref.genome = ref.genome, 
                       contexts = contexts, 
                       makeRegnull = makeNull, 
