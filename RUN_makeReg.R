@@ -76,8 +76,6 @@ min.C <- 5
 fp.rate <- 0.01
 
 
-
-
 chrfiles <- list.files(fasta.folder, pattern=paste0("*.fasta.gz$"), full.names = TRUE)
 
 for (i in 1:length(chrfiles)) {
