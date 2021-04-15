@@ -6,6 +6,7 @@ library(GenomicRanges)
 library(dplyr)
 library(stringi)
 library(Biostrings)
+library(R.utils)
 
 # Read source code and define output directory
 source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/makeRegScaffolds.R"))
