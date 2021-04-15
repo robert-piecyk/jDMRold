@@ -26,10 +26,10 @@ filelist <- "/home/rashmi/DMR-Analysis/listFiles.fn"
 # Step2: Run Region DMRs
 #-----------------------------------------------------------------------------
 ##Folder containing Cytosine regions as Rdata files 
-Regionsfolder <- "/home/rashmi/DMR-Analysis/min.C_5/Arabidopsis/fp0.01"
+Regionsfolder <- "/home/rashmi/DMR-Analysis/min.C_5"
 
 runMethimputeRegions(Regionfiles=Regionsfolder,
-                     samplefiles=filelist,
+                     samplefiles=filelist,s
                      genome="Arabidopsis",
                      context=c("CG","CHG","CHH"),
                      out.dir=myoutput)
@@ -46,7 +46,7 @@ runMethimputeGrid(out.dir=myoutput,
                   chrfile=chrlengths,
                   win=100,
                   step=100,
-                  genome="Beech",
+                  genome="Arabidopsis",
                   samplefiles=filelist,
                   mincov=0,
                   nCytosines=5,
@@ -79,7 +79,7 @@ rm(list=ls())
 source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/makeDMRmatrix.R"))
 
 mydir <- "/home/rashmi/jDMR-output"
-filelist <- "/home/rashmi/DMR-Analysis/listFiles-AT.fn"
+filelist <- "/home/rashmi/DMR-Analysis/listFiles.fn"
 
 # make binary & rc.meth.lvl matrix
 makeDMRmatrix(context=c("CG","CHG","CHH"),
