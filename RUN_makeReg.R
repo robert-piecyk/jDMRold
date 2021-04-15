@@ -63,16 +63,23 @@ for (i in 1:length(chrfiles)) {
 #-----------------------------------------------------------------------------------
 # For genomes with scaffolds
 #-----------------------------------------------------------------------------------
-out.dir <-"/home/rashmi/jDMR-output/min.C_5/Beech/fp0.01/"
-fasta.folder <-"/home/rashmi/Beech/ref_genome/fasta/"
+out.dir <- "/home/rashmi/jDMR-output/min.C_5/Beech/fp0.01/"
+
+# Either provide the longest few scaffolds. or supply all (they should be split into individual scaffolds)
+# faidx --split-files scaffolds.fa
+
+fasta.folder <- "/home/rashmi/Beech/ref_genome/fasta/"
 out.name <- "Beech"
-contexts <- c("CG")
-makeNull <- c(TRUE)
+contexts <- c("CG", "CHG", "CHH")
+makeNull <- c(TRUE, TRUE, TRUE)
 min.C <- 5
 fp.rate <- 0.01
 
 
+
+
 chrfiles <- list.files(fasta.folder, pattern=paste0("*.fasta.gz$"), full.names = TRUE)
+
 for (i in 1:length(chrfiles)) {
   tryCatch({
     fasta <-readDNAStringSet(chrfiles[i])
