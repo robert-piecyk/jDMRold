@@ -25,7 +25,7 @@ filelist <- "/home/rashmi/DMR-Analysis/listFiles.fn"
 #-----------------------------------------------------------------------------
 # Step2: Run Region DMRs
 #-----------------------------------------------------------------------------
-##Folder containing Cytosine regions as Rdata files 
+##Folder containing Cytosine regions as Rdata files. These are the outputs of RUN_makeReg.R 
 Regionsfolder <- "/home/rashmi/DMR-Analysis/min.C_5"
 
 runMethimputeRegions(Regionfiles=Regionsfolder,
