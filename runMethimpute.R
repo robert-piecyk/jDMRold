@@ -47,8 +47,12 @@ runMethimputeRegions <- function(samplefiles, Regionfiles, genome, context, out.
   }
 }
 
-binGenome <- function(chrfile, win, step, genome, out.dir){
-  gr <- GRanges(seqnames=gsub("chr", "", names(chrs)), ranges=IRanges(start=1, end=chrs))
+binGenome <- function(chrfile, scaffold, win, step, genome, out.dir){
+  if (scaffold==TRUE) {
+    gr <- GRanges(seqnames=names(chrfile), ranges=IRanges(start=1, end=chrfile))}
+  else{
+    gr <- GRanges(seqnames=gsub("chr", "", names(chrfile)), ranges=IRanges(start=1, end=chrfile))
+  }
   binned.g <- slidingWindows(gr, width = win, step = step)
   d <- data.frame(unlist(binned.g))
   names(d)[1] <- "chr"
@@ -60,10 +64,10 @@ binGenome <- function(chrfile, win, step, genome, out.dir){
   names(new) <- "reg.obs"
   out.name <- paste0(out.dir, "/", genome,"_Win", win, "_Step", step, ".Rdata", sep="")
   dput(new, out.name)
-}  
+}    
   
-runMethimputeGrid <- function(out.dir, chrfile, win, step, genome, samplefiles, context, mincov, nCytosines){
-  binGenome(chrfile,win,step,genome,out.dir)
+runMethimputeGrid <- function(out.dir, chrfile, scaffold, win, step, genome, samplefiles, context, mincov, nCytosines){
+  binGenome(chrfile, scaffold, win, step,genome, out.dir)
   merge.list <- vector(mode="list") 
   filelist <- fread(samplefiles, header=TRUE)
   for (j in 1:length(context)){

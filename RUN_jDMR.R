@@ -1,5 +1,6 @@
 #library(devtools)
 #devtools::install_github("jlab-code/jDMR")
+
 rm(list=ls())
 library(data.table)
 library(dplyr)
@@ -7,38 +8,63 @@ library(methimpute)
 library(stringr)
 
 #-----------------------------------------------------------------------------
-# Step1: Run Methimpute for cytosine regions
+# Step1: Load the source code
 #-----------------------------------------------------------------------------
 source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/globFun.R"))
 source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/MethimputeReg.R"))
 source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/runMethimpute.R"))
 
-#Input files: 
-#-----------------------------------------------------------------------------
 ##Output directory
 myoutput <- "/home/rashmi/jDMR-output"
 
-##list containing filenames with full PATH.
-##Note that Methimpute files should have prefix "methylome" and suffix "All.txt"
+## list containing filenames with full PATH.
+## Note that Methimpute files should have prefix "methylome" and suffix "All.txt"
 filelist <- "/home/rashmi/DMR-Analysis/listFiles.fn"
 
-#Region DMRs
+
+#-----------------------------------------------------------------------------
+# Step2: Run Region DMRs
+#-----------------------------------------------------------------------------
 ##Folder containing Cytosine regions as Rdata files 
 Regionsfolder <- "/home/rashmi/DMR-Analysis/min.C_5/Arabidopsis/fp0.01"
+
 runMethimputeRegions(Regionfiles=Regionsfolder,
                      samplefiles=filelist,
                      genome="Arabidopsis",
                      context=c("CG","CHG","CHH"),
                      out.dir=myoutput)
 
-#grid DMRs
+#-----------------------------------------------------------------------------
+# Step2: Run grid DMRs
+#-----------------------------------------------------------------------------
+# This is an example for Arabidopsis
 #Here you need to specify the chromosome lengths. For Arabidopsis you can use the ones provided.
-chrs <- c(chr1=30427671, chr2=19698289, chr3=23459830, chr4=18585056, chr5=26975502)
-runMethimputeGrid(out.dir=myoutput, 
-                  chrfile=chrs,
-                  win=100, 
+chrlengths <- c(chr1=30427671, chr2=19698289, chr3=23459830, chr4=18585056, chr5=26975502)
+
+runMethimputeGrid(out.dir=myoutput,
+                  scaffold=FALSE, 
+                  chrfile=chrlengths,
+                  win=100,
                   step=100,
-                  genome="Arabidopsis",
+                  genome="Beech",
+                  samplefiles=filelist,
+                  mincov=0,
+                  nCytosines=5,
+                  context=c("CG","CHG","CHH"))
+
+# This is an example for Beech
+# If your genome doesnot have a proper genome Assembly, has scaffolds, etc
+# Use the fasta index file to obtain the chrlengths.
+f <- fread("/home/rashmi/Beech/ref_genome/fasta/Fagus_sylvatica_genome.fasta.fai")
+chrlengths <- f$V2
+names(chrlengths) <- f$V1
+
+runMethimputeGrid(out.dir=myoutput,
+                  scaffold=TRUE, 
+                  chrfile=chrlengths,
+                  win=100,
+                  step=100,
+                  genome="Beech",
                   samplefiles=filelist,
                   mincov=0,
                   nCytosines=5,
