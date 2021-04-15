@@ -29,7 +29,7 @@ filelist <- "/home/rashmi/DMR-Analysis/listFiles.fn"
 Regionsfolder <- "/home/rashmi/DMR-Analysis/min.C_5"
 
 runMethimputeRegions(Regionfiles=Regionsfolder,
-                     samplefiles=filelist,s
+                     samplefiles=filelist,
                      genome="Arabidopsis",
                      context=c("CG","CHG","CHH"),
                      out.dir=myoutput)
