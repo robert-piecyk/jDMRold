@@ -90,7 +90,7 @@ merge.bins <- function(rcmethlvl, statecalls, gap){
   values(gr2) <- cbind(values(gr2), values(gr1), DataFrame(matrix2[,c(4:NCOL(matrix2))]))
   
   # this is for the state-calls: collapse overlapping bins if pattern is same
-  grl_reduce <- unlist(reduce(split(gr1, gr1$pattern)))
+  grl_reduce <- unlist(GenomicRanges::reduce(split(gr1, gr1$pattern)))
   result <- sort(grl_reduce)
   result$pattern <- names(result)
   result <- data.frame(result)
@@ -99,7 +99,7 @@ merge.bins <- function(rcmethlvl, statecalls, gap){
   # this is for the rcmethlvl: collapse bins and take average of the bins
   mycols <- colnames(matrix1)[4:NCOL(matrix1)]
   fn = function(u){
-    out = reduce(u)
+    out = GenomicRanges::reduce(u)
     for (x in 1:length(mycols)){
       eval(parse(text=paste0("out$", mycols[x], " = mean(u$", mycols[x], ")")))
     }
