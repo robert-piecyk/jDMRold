@@ -32,6 +32,7 @@ runMethimputeRegions(Regionfiles=Regionsfolder,
                      samplefiles=filelist,
                      genome="Arabidopsis",
                      context=c("CG","CHG","CHH"),
+                     include.intermediate=TRUE,
                      out.dir=myoutput)
 
 #-----------------------------------------------------------------------------
@@ -48,6 +49,7 @@ runMethimputeGrid(out.dir=myoutput,
                   step=100,
                   genome="Arabidopsis",
                   samplefiles=filelist,
+                  include.intermediate=TRUE,
                   mincov=0,
                   nCytosines=5,
                   context=c("CG","CHG","CHH"))
@@ -66,12 +68,13 @@ runMethimputeGrid(out.dir=myoutput,
                   step=100,
                   genome="Beech",
                   samplefiles=filelist,
+                  include.intermediate=TRUE,
                   mincov=0,
                   nCytosines=5,
                   context=c("CG","CHG","CHH"))
 
 #-----------------------------------------------------------------------------
-# Step2: Run DMR Matrix
+# Step3: Run DMR Matrix
 #-----------------------------------------------------------------------------
 rm(list=ls())
 
@@ -84,11 +87,12 @@ filelist <- "/home/rashmi/DMR-Analysis/listFiles.fn"
 # make binary & rc.meth.lvl matrix
 makeDMRmatrix(context=c("CG","CHG","CHH"),
               samplefiles=filelist,
+              include.intermediate=TRUE,
               input.dir=mydir,
               out.dir=mydir)
 
 #-----------------------------------------------------------------------------
-# Step3: Run Filter DMR Matrix
+# Step4: Run Filter DMR Matrix
 #-----------------------------------------------------------------------------
 rm(list=ls())
 
@@ -106,7 +110,7 @@ filterDMRmatrix(replicate.consensus=NULL, # set value if your data is pairwise c
                 data.dir=data.dir)
 
 #-----------------------------------------------------------------------------
-# Step4: Run Annotate DMRs
+# Step5: Run Annotate DMRs
 #-----------------------------------------------------------------------------
 rm(list=ls())
 library(ggplot2)

@@ -1,5 +1,5 @@
 
-runMethimputeRegions <- function(samplefiles, Regionfiles, genome, context, out.dir, mincov=0, nCytosines=0) {
+runMethimputeRegions <- function(samplefiles, Regionfiles, genome, context, out.dir, include.intermediate, mincov=0, nCytosines=0) {
   df.obs <- list()
   df.sim <- list()
   merge.list <- vector(mode="list")
@@ -36,7 +36,7 @@ runMethimputeRegions <- function(samplefiles, Regionfiles, genome, context, out.
         context=context[j],
         refRegion=regMerged,
         fit.plot=FALSE,
-        include.intermediate=FALSE, 
+        include.intermediate=include.intermediate, 
         probability="constrained",
         out.dir=out.dir,
         fit.name=paste0(methfn, "_", context[j]),
@@ -66,20 +66,20 @@ binGenome <- function(chrfile, scaffold, win, step, genome, out.dir){
   dput(new, out.name)
 }    
   
-runMethimputeGrid <- function(out.dir, chrfile, scaffold, win, step, genome, samplefiles, context, mincov, nCytosines){
+runMethimputeGrid <- function(out.dir, chrfile, scaffold, win, step, genome, samplefiles, context, mincov, include.intermediate, nCytosines){
   binGenome(chrfile, scaffold, win, step,genome, out.dir)
   merge.list <- vector(mode="list") 
   filelist <- fread(samplefiles, header=TRUE)
   for (j in 1:length(context)){
     for (i in 1:length(filelist$file)){
-      methfn <- gsub(".*methylome_|\\_All.txt$", "", filelist$file[i])
+      methfn <- gsub(".*methylome_|\\.txt|_All.txt$", "", filelist$file[i])
       cat(paste0("Running file: ",methfn," for context: ",context[j],"\n"), sep = "")
       grid.out <- makeMethimpute(
         df=filelist$file[i],
         context=context[j],
         refRegion=paste0(out.dir,"/",genome,"_Win",win,"_Step",step,".Rdata",sep=""),
         fit.plot=FALSE,
-        include.intermediate=FALSE, 
+        include.intermediate=include.intermediate, 
         probability="constrained",
         out.dir=out.dir,
         fit.name=paste0(methfn, "_", context[j]),

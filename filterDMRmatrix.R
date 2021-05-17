@@ -25,7 +25,7 @@ filterReplicateConsensus <- function(status.collect, rc.methlevel.collect, repli
         df.bind$count[df.bind$sample==m] <- 1
       
       Sys.sleep(1/NROW(status.collect))
-      setTxtProgressBar(pb, x)
+      setTxtProgressBar(pb1, x)
     }
     close(pb1)
     #print(df.bind)
@@ -106,7 +106,7 @@ merge.bins <- function(rcmethlvl, statecalls, gap){
     return(out)
   }
   
-  cat(paste0("Now, Merging overlapping and consecutive bins...\n"))
+  message("\nNow, Merging overlapping and consecutive bins...\n")
   # split rcmthlvl matrix based on pattterns
   grl <- split(gr2, gr2$pattern)
   
@@ -230,10 +230,10 @@ filterDMRmatrix <- function(epiMAF.cutoff, replicate.consensus, gridDMR, data.di
                      data.out=data.dir)
         } 
       } else {
-        message("grid DMR set to FALSE")
+        message("\ngrid DMR set to FALSE")
         }
     }
   } else {
-    message("DMR matrix files do not exist!")
+    message("\nDMR matrix files do not exist!")
   }
 }
