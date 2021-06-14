@@ -1,5 +1,5 @@
 
-runMethimputeRegions <- function(samplefiles, Regionfiles, genome, context, out.dir, include.intermediate, mincov=0, nCytosines=0) {
+runMethimputeRegions <- function(samplefiles, Regionfiles, genome, context, out.dir, include.intermediate=FALSE, mincov=0, nCytosines=0) {
   df.obs <- list()
   df.sim <- list()
   merge.list <- vector(mode="list")
@@ -47,12 +47,29 @@ runMethimputeRegions <- function(samplefiles, Regionfiles, genome, context, out.
   }
 }
 
-binGenome <- function(chrfile, scaffold, win, step, genome, out.dir){
-  if (scaffold==TRUE) {
-    gr <- GRanges(seqnames=names(chrfile), ranges=IRanges(start=1, end=chrfile))}
-  else{
-    gr <- GRanges(seqnames=gsub("chr", "", names(chrfile)), ranges=IRanges(start=1, end=chrfile))
+binGenome <- function(fasta, win, step, genome, out.dir){
+  val <- c()
+  cat("Extracting chromosomes\n")
+  chr.ext <- list.files(fasta, pattern="fa|fasta.gz$|fa.gz$", include.dirs = FALSE, full.names=TRUE)
+  if (length(chr.ext)==0) {
+    stop ("Empty folder!")
+  } else {
+    for (x in seq_along(chr.ext)){
+      f.name <- gsub("Arabidopsis_thaliana.TAIR10.dna.chromosome.|\\.fa|\\.fa.gz|\\.fasta.gz$", "", basename(chr.ext[x]))
+      f <- seqinr::read.fasta(chr.ext[x])
+      cat(paste0("Chr: ", f.name, " \n"))
+      if (length(f)>1) {
+        stop ("Exiting... Multi FASTA file detected! Please, supply individual fasta files\n") }
+      else {
+        val[x] <- getLength(f)
+        names(val)[x] <- f.name
+      } 
+    }
   }
+  
+  #gr <- GRanges(seqnames=gsub("chr", "", names(chrfile)), ranges=IRanges(start=1, end=chrfile))
+  gr <- GRanges(seqnames=names(val), ranges=IRanges(start=1, end=val))
+  
   binned.g <- slidingWindows(gr, width = win, step = step)
   d <- data.frame(unlist(binned.g))
   names(d)[1] <- "chr"
@@ -64,10 +81,11 @@ binGenome <- function(chrfile, scaffold, win, step, genome, out.dir){
   names(new) <- "reg.obs"
   out.name <- paste0(out.dir, "/", genome,"_Win", win, "_Step", step, ".Rdata", sep="")
   dput(new, out.name)
-}    
-  
-runMethimputeGrid <- function(out.dir, chrfile, scaffold, win, step, genome, samplefiles, context, mincov, include.intermediate, nCytosines){
-  binGenome(chrfile, scaffold, win, step,genome, out.dir)
+}
+
+runMethimputeGrid <- function(out.dir, fasta, win, step, genome, samplefiles, context, mincov, include.intermediate=FALSE, nCytosines){
+
+  binGenome(fasta, win, step,genome, out.dir)
   merge.list <- vector(mode="list") 
   filelist <- fread(samplefiles, header=TRUE)
   for (j in 1:length(context)){

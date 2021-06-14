@@ -26,7 +26,7 @@ merge.cols <- function(filepath, colm, include.intermediate) {
   return(mylist)
 }
 
-makeDMRmatrix <- function(context, samplefiles, input.dir, out.dir, include.intermediate) {
+makeDMRmatrix <- function(context, samplefiles, input.dir, out.dir, include.intermediate=FALSE) {
   # Read the sample file with filenames
   samplelist <- fread(samplefiles, header=T)
   for (j in  1:length(context)){
@@ -38,12 +38,12 @@ makeDMRmatrix <- function(context, samplefiles, input.dir, out.dir, include.inte
     if (length(extractflist) != 0){
       mynames <- gsub(paste0("_", context[j], ".txt$"), "", basename(extractflist))
       selectlist <- list()
-      message("\nExtracting filenames and matching them....\n")
+      message("\nExtracting filenames and matching them....")
       for (a1 in seq_along(mynames)){
-        as <- samplelist[grepl(paste0("_",mynames[a1],"_"), samplelist$file),]
+        as <- samplelist[grepl(paste0("_",mynames[a1]), samplelist$file),]
         if (NROW(as)==1){
           as$full.path.MethReg <- grep(paste0("/", mynames[a1], "_", context[j], ".txt", sep=""), extractflist, value=TRUE)
-          message("\nRegion file ", basename(as$full.path.MethReg)," found !")
+          message("\n", basename(as$full.path.MethReg)," found !")
           selectlist[[a1]] <- as
         } else { 
           message("\nMultiple files with string match ", mynames[a1]," found !")
@@ -60,7 +60,7 @@ makeDMRmatrix <- function(context, samplefiles, input.dir, out.dir, include.inte
         flist$name <- flist$sample 
       }
       
-      message(paste0("Now, constructing DMR matrix for ", context[j]), sep = "")
+      message(paste0("\nNow, constructing DMR matrix for ", context[j]), sep = "")
       
       # merge samples by Chr coordinates
       #(column 6) state-calls and (column 7) rc.meth.lvl
