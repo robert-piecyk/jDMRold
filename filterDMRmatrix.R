@@ -1,7 +1,5 @@
 
-filterReplicateConsensus <- function(status.collect, rc.methlevel.collect, replicate.consensus, gap=1){
-  
-  pb1 <- txtProgressBar(min = 1, max = NROW(status.collect), char = "=", style = 3, file = "")
+filterReplicateConsensus <- function(status.collect, rc.methlevel.collect, replicate.consensus){
   
   if (!is.null(status.collect$epiMAF)){
     status.collect <- status.collect[,-c("epiMAF")]
@@ -12,28 +10,32 @@ filterReplicateConsensus <- function(status.collect, rc.methlevel.collect, repli
   colnames(sampleinfo) <- c("sample", "replicate")
   
   dt <- data.frame()
+  pb1 <- txtProgressBar(min = 1, max = NROW(status.collect), char = "=", style = 3, file = "")
+  
   q <- lapply(1:NROW(status.collect), function(x){
     mypattern <- unlist(status.collect[x, 4:NCOL(status.collect)])
     df.bind <- cbind(sampleinfo, mypattern)
     for (m in unique(df.bind$sample)){
-      rval <- replicate.consensus * length(df.bind$mypattern[df.bind$sample==m])
+      rval <- round(replicate.consensus * length(df.bind$mypattern[df.bind$sample==m]))
       pattern.vals <- df.bind$mypattern[df.bind$sample==m]
       tt <- table(pattern.vals)
-      if (max(tt) >= rval)
+      if (max(tt) >= rval){
         df.bind$count[df.bind$sample==m] <- 0
-      else
+      } else {
         df.bind$count[df.bind$sample==m] <- 1
-      
-      Sys.sleep(1/NROW(status.collect))
-      setTxtProgressBar(pb1, x)
+      }
     }
+    Sys.sleep(1/NROW(status.collect))
+    setTxtProgressBar(pb1, x)
     close(pb1)
     #print(df.bind)
-    if (sum(df.bind$count)==0)
+    if (sum(df.bind$count)==0) {
       dt <- rbind(dt, status.collect[x,])
+    }
   })
-  status.collect <- q[-which(sapply(q, is.null))]
-  df.status.collect <- rbindlist(status.collect)
+  out <- q[!sapply(q,is.null)]
+  #status.collect <- q[-which(sapply(q, is.null))]
+  df.status.collect <- rbindlist(out)
   if (NROW(df.status.collect) !=0){
   df.rc.methlevel.collect <- rc.methlevel.collect %>% semi_join(df.status.collect, by=c("seqnames","start","end"))
   return(list(df.status.collect, df.rc.methlevel.collect))
@@ -114,13 +116,12 @@ merge.bins <- function(rcmethlvl, statecalls, gap){
   
   for (x in 1:length(grl)){
     a <- data.frame(grl[[x]])
-    a1 <- a %>% arrange(pattern, start) %>% group_by(pattern) %>% 
-      mutate(indx = cumsum(start > lag(end, default = start[1]) + gap))
+    a1 <- a %>% arrange(pattern, start) %>% group_by(pattern) %>% mutate(indx = cumsum(start > lag(end, default = start[1]) + gap))
     a1.gr <- makeGRangesFromDataFrame(a1, keep.extra.columns=TRUE)
     df <- lapply(split(a1.gr, a1.gr$indx), fn)
     mylist[[x]] <- df
     
-    Sys.sleep(1/length(grl))
+    Sys.sleep(0.05)
     setTxtProgressBar(pb3, x)
   }
   close(pb3)
@@ -128,7 +129,7 @@ merge.bins <- function(rcmethlvl, statecalls, gap){
   f.df <- unlist(mylist)
   f.df <- do.call(rbind, lapply(f.df, data.frame))
   f.df <- f.df[order(f.df[,1], f.df[,2]),]
-  f.df[,(6:NCOL(f.df))] <- lapply(f.df[,(6:NCOL(f.df))], function(xy){ floorDec(xy,5)})
+  f.df[,(6:NCOL(f.df))] <- lapply(f.df[,(6:NCOL(f.df))], function(xy){ floorDec(xy,5) })
   
   final.status.collect <- subset(final.status.collect, select = -c(strand, pattern))
   final.rcmethlvl.collect <- subset(f.df, select = -c(strand))
