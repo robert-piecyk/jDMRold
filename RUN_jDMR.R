@@ -11,22 +11,22 @@ library(seqinr)
 #-----------------------------------------------------------------------------
 # Step1: Load the source code
 #-----------------------------------------------------------------------------
-source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/globFun.R"))
-source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/MethimputeReg.R"))
-source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/runMethimpute.R"))
+source(paste0(Sys.getenv("HOME"),"/jDMR/globFun.R"))
+source(paste0(Sys.getenv("HOME"),"/jDMR/MethimputeReg.R"))
+source(paste0(Sys.getenv("HOME"),"/jDMR/runMethimpute.R"))
 
 ##Output directory
 myoutput <- "/home/rashmi/jDMR-output"
 
 ## list containing filenames with full PATH.
 ## Note that Methimpute files should have prefix "methylome" and suffix "All.txt"
-filelist <- "/home/rashmi/DMR-Analysis/listFiles.fn"
+filelist <- "/home/rashmi/jDMR/listFiles.fn"
 
 #-----------------------------------------------------------------------------
 # Step2: Run Region DMRs
 #-----------------------------------------------------------------------------
 ##Folder containing Cytosine regions as Rdata files. These are the outputs of RUN_makeReg.R 
-Regionsfolder <- "/home/rashmi/DMR-Analysis/min.C_5"
+Regionsfolder <- "/home/rashmi/jDMR/min.C_5"
 
 #Override with include.intermediate=TRUE
 runMethimputeRegions(Regionfiles=Regionsfolder,
@@ -39,7 +39,7 @@ runMethimputeRegions(Regionfiles=Regionsfolder,
 # Step2: And/Or Run grid DMRs
 #-----------------------------------------------------------------------------
 
-fasta.files <- paste0(Sys.getenv("HOME"),"/DMR-Analysis/FASTA/Arabidopsis")
+fasta.files <- paste0(Sys.getenv("HOME"),"/jDMR/FASTA/Arabidopsis")
 
 #Override with include.intermediate=TRUE
 runMethimputeGrid(fasta=fasta.files,
@@ -58,10 +58,10 @@ runMethimputeGrid(fasta=fasta.files,
 rm(list=ls())
 
 # makeDMRmatrix: for both population level and  pairwise control-Treatment data
-source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/makeDMRmatrix.R"))
+source(paste0(Sys.getenv("HOME"),"/jDMR/makeDMRmatrix.R"))
 
 mydir <- "/home/rashmi/jDMR-output"
-filelist <- "/home/rashmi/DMR-Analysis/listFiles.fn"
+filelist <- "/home/rashmi/jDMR/listFiles.fn"
 
 # make binary & rc.meth.lvl matrix
 makeDMRmatrix(context=c("CG","CHG","CHH"),
@@ -74,8 +74,8 @@ makeDMRmatrix(context=c("CG","CHG","CHH"),
 #-----------------------------------------------------------------------------
 rm(list=ls())
 
-source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/filterDMRmatrix.R"))
-source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/globFun.R"))
+source(paste0(Sys.getenv("HOME"),"/jDMR/filterDMRmatrix.R"))
+source(paste0(Sys.getenv("HOME"),"/jDMR/globFun.R"))
 
 data.dir <- "/home/rashmi/jDMR-output"
 
@@ -98,12 +98,12 @@ library(tidyr)
 library(dplyr)
 
 #Load source code
-source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/annotateDMRs.R", sep=""))
+source(paste0(Sys.getenv("HOME"),"/jDMR/annotateDMRs.R", sep=""))
 
 wd ="/home/rashmi"
 #Please supply the text files to be annotated in a separate folder. For e.g I make a new folder "mysamples". In the case of gridDMR supply the (*merged.txt) files by moving them to "mysamples" folder
-input.dir <- "/home/rashmi/jDMR-output/mysamples"
-out.dir <- "/home/rashmi/jDMR-output/mysamples"
+input.dir <- "/home/rashmi/jDMR/mysamples"
+out.dir <- "/home/rashmi/jDMR/mysamples"
 
 gff.AT <- paste0(wd, "/Annotations/Arabidopsis_thaliana.TAIR10.47.gff3", sep="")
 gff.TE <- paste0(wd, "/Annotations/TAIR10_TE.gff3", sep="")
@@ -128,11 +128,11 @@ annotateDMRs(gff.files=c(gff.AT, gff.TE, gff.pr),
 rm(list=ls())
 library(data.table)
  
-source(paste0(Sys.getenv("HOME"),"/DMR-Analysis/MethimputeRegTobedGraph.R", sep=""))
+source(paste0(Sys.getenv("HOME"),"/jDMR/MethimputeRegTobedGraph.R", sep=""))
  
-wd <- "~/jDMR-output/RegionCalls"
+wd <- "~/jDMR/RegionCalls"
 myfiles <- list.files(wd, pattern=".txt$", full.names = TRUE)
-out.dir <- "~/jDMR-output/bedgraph-out"
+out.dir <- "~/jDMR/bedgraph-out"
  
 for (i in 1:length(myfiles)) {
   MethimputeRegTobedGraph.stateCalls(regfile=myfiles[i], out.dir=out.dir)
