@@ -1,5 +1,14 @@
+#'
+#' @param distcor
+#' @param skip
+#' @param plot.parameters
+#' @import ggplot2
+#' @import stats
+#' @import minpack.lm
+#' @export
+#'
 modified.estimateTransDist <- function(distcor, skip=2, plot.parameters=TRUE) {
-  
+
   ## Context correlation fits and plots
   contexts <- dimnames(distcor$data)[[1]]
   cor.array <- distcor$data
@@ -16,18 +25,18 @@ modified.estimateTransDist <- function(distcor, skip=2, plot.parameters=TRUE) {
         }
       }
       if (c1 <= c2) {
-        df <- data.frame(distance = as.numeric(dimnames(cor.array)[[3]]), 
-          correlation = cor.array[c1,c2,,'correlation'], 
-          weight = cor.array[c1,c2,,'weight'], 
+        df <- data.frame(distance = as.numeric(dimnames(cor.array)[[3]]),
+          correlation = cor.array[c1,c2,,'correlation'],
+          weight = cor.array[c1,c2,,'weight'],
           from = contexts[c1], to = contexts[c2])
-        
+
         ## Fit
         y <- df$correlation[(skip+1):nrow(df)]
         x <- df$distance[(skip+1):nrow(df)]
         weight <- df$weight[(skip+1):nrow(df)]
         startvalues <- list(a0 = stats::na.omit(y)[1], D = 50)
         p <- NULL
-        
+
         if (is.null(p)) {
           startvalues <- list(a0 = stats::na.omit(y)[1])
           p <- tryCatch({
@@ -44,13 +53,13 @@ modified.estimateTransDist <- function(distcor, skip=2, plot.parameters=TRUE) {
             startvalues
           })
         }
-        
+
         ## Check if we have negative D
         if (p$D <= 0) {
           p$D <- Inf
         }
         params.list[[context.transition]] <- p
-        
+
         ## Plot
         df$correlation.fit <- p$a0 * exp(-df$distance/p$D)
         df$logweight <- log(df$weight+1)
@@ -60,7 +69,7 @@ modified.estimateTransDist <- function(distcor, skip=2, plot.parameters=TRUE) {
     }
   }
   maxweight <- max(maxweights, na.rm = TRUE)
-  
+
   ## Plot correlation
   df <- do.call(rbind, dfs)
   df$a0 <- round(sapply(params.list[paste0(df$from, '-', df$to)], '[[', 'a0'), 2)
@@ -76,13 +85,21 @@ modified.estimateTransDist <- function(distcor, skip=2, plot.parameters=TRUE) {
   if (miny < 0) {
     ggplt <- ggplt + geom_hline(aes_string('yintercept'=0), linetype=2, alpha=0.5)
   }
-  
+
   transDist <- sapply(params.list, '[[', 'D')
   return(list(transDist=transDist, plot=ggplt))
 }
 
 #--------------------------------------------------------------------------
-
+#' @param model
+#' @param out.dir
+#' @param context
+#' @param name
+#' @importFrom data.table fread
+#' @importFrom data.table fwrite
+#' @importFrom stringr str_replace_all
+#' @export
+#'
 modifiedExportMethylome <- function(model, out.dir, context, name) {
     #data <- model$data
     data <- model
@@ -110,60 +127,71 @@ modifiedExportMethylome <- function(model, out.dir, context, name) {
 }
 
 #--------------------------------------------------------------------------
-
+#' @param df
+#' @param refRegion
+#' @param context
+#' @param mincov
+#' @param nCytosines
+#' @import dplyr
+#' @importFrom data.table fread
+#' @import stats
+#' @import GenomicRanges
+#' @import S4Vectors
+#' @export
+#'
 makeRegionsImpute <- function(df, context, refRegion, mincov, nCytosines) {
-  
+
   #regions file
   tmp_reg <- dget(refRegion)
   data <- as.data.frame(tmp_reg$reg.obs)
   #colnames(data)[which(names(data) == "cluster.size")] <- "cluster.length"
-  
+
   #reference methimpute file
   ref_data <- fread(df, skip = 1, select = c("V1","V2","V3","V4","V5","V6"))
-  
+
   #remove Mt and chloroplast coordinates. Following is for Arabidopsis only
-  ref_data <- ref_data %>% filter(ref_data$V1 != "M" & ref_data$V1 != "C")
-  
+  ref_data <- ref_data %>% dplyr::filter(ref_data$V1 != "M" & ref_data$V1 != "C")
+
   #filtering by coverage
   if (mincov>0){
     cat(paste0("Filtering for coverage: ", mincov,"\n"), sep = "")
     ref_data <- ref_data[which(ref_data$V6 >= mincov),]
   }
-  
+
   ref_data <- ref_data[which(ref_data$V4==context),]
-  
+
   data_gr <- GRanges(seqnames=data$chr,
                      ranges=IRanges(start=data$start, end=data$end),
                      clusterlen=data$cluster.length,
                      context=as.factor(context))
-  
+
   ref_gr <- GRanges(seqnames=ref_data$V1,
                     ranges=IRanges(start=ref_data$V2, width=1),
                     context=as.factor(context),
                     methylated=ref_data$V5,
                     total=ref_data$V6)
-  
-  data_gr$cytosineCount <- countOverlaps(data_gr, ref_gr)
-  
+
+  data_gr$cytosineCount <- GenomicRanges::countOverlaps(data_gr, ref_gr)
+
   #filtering by number of cytosines
   if (nCytosines>0){
     cat(paste0("Minimum cytosines covered per region: ", nCytosines,"\n"), sep = "")
     data_gr <- data_gr[which(data_gr$cytosineCount >= nCytosines),]
   }
-  
+
   counts <- array(NA, dim=c(length(data_gr), 2), dimnames=list(NULL, c("methylated", "total")))
-  
-  overlaps <- findOverlaps(ref_gr, data_gr)
-  
-  overlaps.hits <- ref_gr[queryHits(overlaps)]
+
+  overlaps <- IRanges::findOverlaps(ref_gr, data_gr)
+
+  overlaps.hits <- ref_gr[S4Vectors::queryHits(overlaps)]
   if (NROW(overlaps.hits) != 0){
-    
-    methylated <- aggregate(overlaps.hits$methylated, list(subjectHits(overlaps)), FUN=sum)
-    total <- aggregate(overlaps.hits$total, list(subjectHits(overlaps)), FUN=sum)
-    
+
+    methylated <- stats::aggregate(overlaps.hits$methylated, list(S4Vectors::subjectHits(overlaps)), FUN=sum)
+    total <- stats::aggregate(overlaps.hits$total, list(S4Vectors::subjectHits(overlaps)), FUN=sum)
+
     if (NROW(methylated) != NROW(counts) ){
       missingr <- which(!rownames(data.frame(data_gr)) %in% methylated$Group.1)
-      
+
       for(item in seq_len(NROW((missingr)))){
         methylated <- rbind (c(missingr[item],0), methylated)
         methylated <- methylated[order(methylated$Group.1),]
@@ -180,22 +208,36 @@ makeRegionsImpute <- function(df, context, refRegion, mincov, nCytosines) {
 }
 
 #--------------------------------------------------------------------------
+#' @param df
+#' @param context Cytosine context
+#' @param fit.plot
+#' @param fit.name
+#' @param refRegion
+#' @param include.intermediate
+#' @param probability
+#' @param out.dir
+#' @param name
+#' @param mincov
+#' @param nCytosines
+#' @importFrom methimpute callMethylation
+#' @importFrom methimpute distanceCorrelation
+#' @export
 
-makeMethimpute <- function(df, context, fit.plot, merge.chr, fit.name, refRegion, 
+makeMethimpute <- function(df, context, fit.plot, fit.name, refRegion,
                          include.intermediate, probability, out.dir, name, mincov, nCytosines){
   methylome.data <- makeRegionsImpute(df, context, refRegion, mincov, nCytosines)
   if (!is.null(methylome.data$counts)) {
     quant.cutoff <- as.numeric(quantile(methylome.data$counts[,"total"], probs = c(0.96), na.rm=TRUE))
     distcor <- distanceCorrelation(methylome.data, distances=0:100)
     fit <- modified.estimateTransDist(distcor)
-    
+
     if (fit.plot==TRUE){
       print(paste0("Generating fit plot...", name))
       pdf(paste0(out.dir, "/", fit.name, "-fit.pdf", sep = ""))
       print(fit)
       dev.off()
     }
-    
+
     model <- callMethylation(data = methylome.data,
                              transDist = fit$transDist,
                              count.cutoff = quant.cutoff,
@@ -203,9 +245,9 @@ makeMethimpute <- function(df, context, fit.plot, merge.chr, fit.name, refRegion
                              max.iter = Inf,
                              include.intermediate = include.intermediate,
                              update = probability)
-    
+
     methFile <- modifiedExportMethylome(model=model$data, out.dir=out.dir, context=context, name=name)
-    rm(model) 
+    rm(model)
   }
   rm(methylome.data)
 }
