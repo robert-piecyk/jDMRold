@@ -7,8 +7,9 @@
 filterDMRmatrix(
   epiMAF.cutoff = NULL,
   replicate.consensus = NULL,
-  gridDMR,
-  data.dir
+  gridDMR = TRUE,
+  data.dir,
+  context.specific.DMRs = TRUE
 )
 }
 \arguments{

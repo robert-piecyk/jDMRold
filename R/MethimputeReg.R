@@ -16,13 +16,16 @@
 #' @param nCytosines
 #' @import ggplot2
 #' @importFrom minpack.lm nlsLM
-#' @importFrom data.table fread fwrite
+#' @importFrom data.table fread
+#' @importFrom data.table fwrite
 #' @importFrom stringr str_replace_all
 #' @import dplyr
-#' @importFrom stats na.omit coefficients
+#' @importFrom stats na.omit
+#' @importFrom stats coefficients
 #' @import GenomicRanges
 #' @import S4Vectors
-#' @importFrom methimpute callMethylation distanceCorrelation
+#' @importFrom methimpute callMethylation
+#' @importFrom methimpute distanceCorrelation
 #' @export
 
 modified.estimateTransDist <- function(distcor, skip=2, plot.parameters=TRUE) {
