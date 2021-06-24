@@ -25,6 +25,6 @@ Imports:
     tidyr (>= 1.1.3),
     IRanges (>= 2.20.1),
     minpack.lm (>= 1.2),
-    S4Vectors (>= 0.28),
+    S4Vectors (>= 0.24),
     stats (>= 4.0)
 RoxygenNote: 7.1.1
