@@ -5,7 +5,7 @@
 #' @importFrom data.table fread
 #' @importFrom data.table rbindlist
 #' @importFrom dplyr semi_join
-#' @importFrom R.utils
+#' @import R.utils
 #' @export
 #'
 
@@ -169,9 +169,9 @@ merge.bins <- function(rcmethlvl, statecalls, gap){
 #------------------------------------------------------------------------------------------------
 
 export.out <- function(out.rcmethlvl, out.statecalls, context, out.name1, out.name2, data.out){
-  fwrite(x=out.statecalls, 
+  fwrite(x=out.statecalls,
     file=paste0(data.out, "/", context, "_", out.name1, ".txt"), quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
-  fwrite(x=out.rcmethlvl, 
+  fwrite(x=out.rcmethlvl,
     file=paste0(data.out, "/", context, "_", out.name2, ".txt"), quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
 }
 

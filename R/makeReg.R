@@ -424,8 +424,5 @@ makeReg<-function(ref.genome, contexts, chr, min.C, N.boot, N.sim.C, fp.rate, se
   CleanEnvir(pattern = "obs.geno.plus")
   CleanEnvir(pattern = "obs.geno.minus")
 
-
-
-
 }
 
