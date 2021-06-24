@@ -23,7 +23,7 @@ Imports:
     ggplot2 (>= 3.3),
     rtracklayer (>= 1.50),
     tidyr (>= 1.1.3),
-    IRanges (>= 2.24),
+    IRanges (>= 2.20.1),
     minpack.lm (>= 1.2),
     S4Vectors (>= 0.28),
     stats (>= 4.0)
