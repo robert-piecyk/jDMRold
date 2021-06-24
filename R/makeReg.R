@@ -13,8 +13,8 @@
 #' @param out.dir
 #' @param out.name
 #' @param makeRegnull
-#' @import R.utils
 #' @import GenomicRanges
+#' @importFrom utils setTxtProgressBar txtProgressBar
 #' @export
 #'
 

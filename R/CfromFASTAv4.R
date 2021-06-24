@@ -6,7 +6,7 @@
 #' @param out.dir
 #' @param write.output
 #' @import Biostrings
-#' @import R.utils
+#' @import utils
 #' @import data.table
 #' @export
 #'

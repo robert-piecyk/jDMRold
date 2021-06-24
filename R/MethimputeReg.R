@@ -16,12 +16,12 @@
 #' @param nCytosines
 #' @import ggplot2
 #' @importFrom minpack.lm nlsLM
+#' @importFrom grDevices dev.off pdf
 #' @importFrom data.table fread
 #' @importFrom data.table fwrite
 #' @importFrom stringr str_replace_all
 #' @import dplyr
-#' @importFrom stats na.omit
-#' @importFrom stats coefficients
+#' @importFrom stats na.omit coefficients
 #' @import GenomicRanges
 #' @import S4Vectors
 #' @importFrom methimpute callMethylation

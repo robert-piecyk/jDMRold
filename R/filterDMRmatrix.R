@@ -5,7 +5,7 @@
 #' @importFrom data.table fread
 #' @importFrom data.table rbindlist
 #' @importFrom dplyr semi_join
-#' @import R.utils
+#' @importFrom utils setTxtProgressBar txtProgressBar
 #' @export
 #'
 
@@ -60,8 +60,8 @@ filterReplicateConsensus <- function(status.collect, rc.methlevel.collect, repli
 #' @param mat1
 #' @param mat2
 #' @param epiMAF
-#' @import R.utils
 #' @importFrom dplyr semi_join
+#' @importFrom utils setTxtProgressBar txtProgressBar
 #' @export
 #'
 
@@ -99,7 +99,7 @@ filterEpiMAF <- function(mat1, mat2, epiMAF){
 #' @import GenomicRanges
 #' @importFrom data.table fread
 #' @importFrom data.table fwrite
-#' @import R.utils
+#' @importFrom utils setTxtProgressBar txtProgressBar
 #' @export
 #'
 merge.bins <- function(rcmethlvl, statecalls, gap){
@@ -254,7 +254,6 @@ context.specific.DMRs <- function(data.dir){
 #' @param gridDMR Logical specifying if grid DMR approach was used for calling DMRs.
 #' @param data.dir Directory containing DMR matrix files. Looks for files with suffix, _StateCalls.txt and _rcMethlvl.txt
 #' @importFrom data.table fread
-#' @import R.utils
 #' @export
 #'
 filterDMRmatrix <- function(epiMAF.cutoff=NULL, replicate.consensus=NULL, gridDMR=TRUE, data.dir, context.specific.DMRs=TRUE) {
