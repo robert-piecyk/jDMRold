@@ -36,6 +36,11 @@ merge.cols <- function(filepath, colm, include.intermediate) {
   return(mylist)
 }
 
+write.out <- function(out.df, data.dir, out.name, context){
+  fwrite(x=out.df, file=paste0(data.dir,"/", context,"_",out.name,".txt"),
+         quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
+}
+
 #' Builds a DMR matrix for all samples
 #'
 #' This function generates a binary matrix, a matrix of recalibrated methylation levels and posterior probabilities for all samples.
@@ -134,12 +139,10 @@ makeDMRmatrix <- function(context, samplefiles, input.dir, out.dir, include.inte
       names(postMax.collect)[2] <- "start"
       names(postMax.collect)[3] <- "end"
 
-      fwrite(x=status.collect, file=paste0(out.dir,"/", context[j],"_StateCalls.txt"),
-             quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
-      fwrite(x=rc.methlevel.collect, file=paste0(out.dir,"/", context[j],"_rcMethlvl.txt"),
-             quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
-      fwrite(x=postMax.collect, file=paste0(out.dir,"/", context[j],"_postMax.txt"),
-             quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
+      write.out(out.df=status.collect, data.dir=out.dir, out.name="StateCalls",context=context[j])
+      write.out(out.df=rc.methlevel.collect, data.dir=out.dir, out.name="rcMethlvl",context=context[j])
+      write.out(out.df=postMax.collect, data.dir=out.dir, out.name="postMax",context=context[j])
+
       message(paste0("\nDone! \n"), sep = "")
     } else{
       message(paste0("Files for context ",context[j]," do not exist\n"), sep="")

@@ -25,7 +25,7 @@ CfromFASTAv4(fasta=myfasta,
 ref.genome <- fread(paste0(myoutput, "/cytosine_positions_chr", 1, ".csv", sep=""))
 
 makeReg(ref.genome=ref.genome,
-        contexts=c("CG"), # all contexts can be specified as ("CG","CHG","CHH","C")
+        contexts=c("CG","CHG","CHH"), # all contexts can be specified as ("CG","CHG","CHH","C")
         makeRegnull=c(TRUE), # can be set to FALSE if null distribution is not required to be generated
         chr=1,
         min.C=5,
@@ -47,7 +47,7 @@ Regionsfolder <- system.file("extdata","min.C_5/fp0.01", package="jDMR")
 runMethimputeRegions(Regionfiles=Regionsfolder,
                      samplefiles=samplefile1,
                      genome="Arabidopsis",
-                     context=c("CG"), #set for all contexts
+                     context=c("CG","CHG","CHH"),
                      out.dir=myoutput)
 
 #-------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ fasta.files <- system.file("extdata", package="jDMR")
 runMethimputeGrid(fasta=fasta.files,
                   samplefiles=samplefile1,
                   genome="Arabidopsis",
-                  context=c("CG"), #set for all contexts
+                  context=c("CG","CHG","CHH"),
                   out.dir=myoutput,
                   win=100,
                   step=100,
@@ -70,7 +70,7 @@ runMethimputeGrid(fasta=fasta.files,
 #-------------------------------------------------------------------------------
 # Make DMR matrix
 #-------------------------------------------------------------------------------
-makeDMRmatrix(context=c("CG"), #set for all contexts
+makeDMRmatrix(context=c("CG","CHG","CHH"),
               samplefiles=samplefile1,
               input.dir=myoutput,
               out.dir=myoutput)

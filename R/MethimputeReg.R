@@ -1,12 +1,30 @@
-#'
+#' @param model
+#' @param out.dir
+#' @param name
 #' @param distcor
 #' @param skip
 #' @param plot.parameters
+#' @param df
+#' @param refRegion
+#' @param context Cytosine context
+#' @param fit.plot
+#' @param fit.name
+#' @param refRegion
+#' @param include.intermediate
+#' @param probability
+#' @param mincov
+#' @param nCytosines
 #' @import ggplot2
-#' @import stats
-#' @import minpack.lm
+#' @importFrom minpack.lm nlsLM
+#' @importFrom data.table fread fwrite
+#' @importFrom stringr str_replace_all
+#' @import dplyr
+#' @importFrom stats na.omit coefficients
+#' @import GenomicRanges
+#' @import S4Vectors
+#' @importFrom methimpute callMethylation distanceCorrelation
 #' @export
-#'
+
 modified.estimateTransDist <- function(distcor, skip=2, plot.parameters=TRUE) {
 
   ## Context correlation fits and plots
@@ -91,15 +109,6 @@ modified.estimateTransDist <- function(distcor, skip=2, plot.parameters=TRUE) {
 }
 
 #--------------------------------------------------------------------------
-#' @param model
-#' @param out.dir
-#' @param context
-#' @param name
-#' @importFrom data.table fread
-#' @importFrom data.table fwrite
-#' @importFrom stringr str_replace_all
-#' @export
-#'
 modifiedExportMethylome <- function(model, out.dir, context, name) {
     #data <- model$data
     data <- model
@@ -127,18 +136,7 @@ modifiedExportMethylome <- function(model, out.dir, context, name) {
 }
 
 #--------------------------------------------------------------------------
-#' @param df
-#' @param refRegion
-#' @param context
-#' @param mincov
-#' @param nCytosines
-#' @import dplyr
-#' @importFrom data.table fread
-#' @import stats
-#' @import GenomicRanges
-#' @import S4Vectors
-#' @export
-#'
+
 makeRegionsImpute <- function(df, context, refRegion, mincov, nCytosines) {
 
   #regions file
@@ -208,20 +206,6 @@ makeRegionsImpute <- function(df, context, refRegion, mincov, nCytosines) {
 }
 
 #--------------------------------------------------------------------------
-#' @param df
-#' @param context Cytosine context
-#' @param fit.plot
-#' @param fit.name
-#' @param refRegion
-#' @param include.intermediate
-#' @param probability
-#' @param out.dir
-#' @param name
-#' @param mincov
-#' @param nCytosines
-#' @importFrom methimpute callMethylation
-#' @importFrom methimpute distanceCorrelation
-#' @export
 
 makeMethimpute <- function(df, context, fit.plot, fit.name, refRegion,
                          include.intermediate, probability, out.dir, name, mincov, nCytosines){
