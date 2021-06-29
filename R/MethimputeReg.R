@@ -176,7 +176,7 @@ makeRegionsImpute <- function(df, context, refRegion, mincov, nCytosines) {
 
   #filtering by number of cytosines
   if (nCytosines>0){
-    cat(paste0("Minimum cytosines covered per region: ", nCytosines,"\n"), sep = "")
+    cat(paste0("Minimum number of cytosines per region: ", nCytosines,"\n"), sep = "")
     data_gr <- data_gr[which(data_gr$cytosineCount >= nCytosines),]
   }
 

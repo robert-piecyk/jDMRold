@@ -226,6 +226,18 @@ context.specific.DMRs <- function(data.dir){
                  out.name="CHH-only-DMRs",
                  data.out=data.dir)
 
+    #non-CG
+    overlaps.nonCG <- findOverlaps(CHG.gr, CHH.gr, ignore.strand=TRUE)
+    overlaps.hits.nonCG <- subsetByOverlaps(CHG.gr, CHH.gr)
+    mcols(overlaps.hits.nonCG)$DMRs.CHH.coord<- CharacterList(split(CHH.gr[subjectHits(overlaps.nonCG)], queryHits(overlaps.nonCG)))
+    out.nonCG <- subsetByOverlaps(overlaps.hits.nonCG, CG.gr, invert = TRUE)
+    nonCG <- data.frame(out.nonCG)
+    nonCG$DMRs.CHG.coord <- paste0(nonCG$seqnames,":",nonCG$start,"-",nonCG$end)
+    nonCG <- nonCG[,c(6,7)]
+    DMR.list.out(context.df=nonCG,
+                 out.name="nonCG-DMRs",
+                 data.out=data.dir)
+
     #multi-context
     overlaps.1 <- findOverlaps(CG.gr, CHG.gr, ignore.strand=TRUE)
     overlaps.hits.1 <- subsetByOverlaps(CG.gr, CHG.gr)

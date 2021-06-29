@@ -12,6 +12,7 @@
 #' @param nCytosines Minimum number of cytsoines
 #' @importFrom data.table fread
 #' @import GenomicRanges
+#' @importFrom  stringr str_remove_all
 #' @export
 #'
 runMethimputeRegions <- function(samplefiles, Regionfiles, genome, context, out.dir, include.intermediate=FALSE, mincov=0, nCytosines=0) {
@@ -44,8 +45,9 @@ runMethimputeRegions <- function(samplefiles, Regionfiles, genome, context, out.
     dput(outlist, regMerged)
 
     for (k2 in 1:length(filelist$file)){
-      methfn <- gsub(".*methylome_|\\_All.txt$", "", filelist$file[k2])
-      cat(paste0("Now running file: ", methfn, " for context ", context[j], " ...\n"), sep="")
+      methfn <- gsub(".*methylome|\\.txt|All.txt$", "", filelist$file[k2])
+      methfn.lab <- str_remove_all(methfn, "[_]")
+      cat(paste0("Now running file: ", methfn.lab, " for context ", context[j], " ...\n"), sep="")
       regions.out <- makeMethimpute(
         df=filelist$file[k2],
         context=context[j],
@@ -54,8 +56,8 @@ runMethimputeRegions <- function(samplefiles, Regionfiles, genome, context, out.
         include.intermediate=include.intermediate,
         probability="constrained",
         out.dir=out.dir,
-        fit.name=paste0(methfn, "_", context[j]),
-        name=methfn,
+        fit.name=paste0(methfn.lab, "_", context[j]),
+        name=methfn.lab,
         nCytosines=nCytosines,
         mincov=mincov)
     }
@@ -118,6 +120,7 @@ binGenome <- function(fasta, win, step, genome, out.dir){
 #' @param step window step-size
 #' @param genome genome label for .e.g Arabidopsis
 #' @importFrom  data.table fread
+#' @importFrom  stringr str_remove_all
 #' @export
 #'
 #'
@@ -127,8 +130,9 @@ runMethimputeGrid <- function(out.dir, fasta, win, step, genome, samplefiles, co
   filelist <- data.table::fread(samplefiles, header=TRUE)
   for (j in 1:length(context)){
     for (i in 1:length(filelist$file)){
-      methfn <- gsub(".*methylome_|\\.txt|_All.txt$", "", filelist$file[i])
-      cat(paste0("Running file: ",methfn," for context: ",context[j],"\n"), sep = "")
+      methfn <- gsub(".*methylome|\\.txt|All.txt$", "", filelist$file[i])
+      methfn.lab <- str_remove_all(methfn, "[_]")
+      cat(paste0("Running file: ",methfn.lab," for context: ",context[j],"\n"), sep = "")
       grid.out <- makeMethimpute(
         df=filelist$file[i],
         context=context[j],
@@ -137,8 +141,8 @@ runMethimputeGrid <- function(out.dir, fasta, win, step, genome, samplefiles, co
         include.intermediate=include.intermediate,
         probability="constrained",
         out.dir=out.dir,
-        fit.name=paste0(methfn, "_", context[j]),
-        name=methfn,
+        fit.name=paste0(methfn.lab, "_", context[j]),
+        name=methfn.lab,
         nCytosines=nCytosines,
         mincov=mincov)
     }
