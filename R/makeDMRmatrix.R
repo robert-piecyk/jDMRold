@@ -69,7 +69,7 @@ makeDMRmatrix <- function(context, samplefiles, input.dir, out.dir, include.inte
       selectlist <- list()
       message("\nExtracting filenames and matching them....")
       for (a1 in seq_along(mynames)){
-        as <- samplelist[grepl(paste0("_",mynames[a1]), samplelist$file),]
+        as <- samplelist[grepl(paste0("_",mynames[a1],"_"), samplelist$file),]
         if (NROW(as)==1){
           as$full.path.MethReg <- grep(paste0("/", mynames[a1], "_", context[j], ".txt", sep=""), extractflist, value=TRUE)
           message("\n", basename(as$full.path.MethReg)," found !")
