@@ -102,7 +102,7 @@ filterEpiMAF <- function(mat1, mat2, epiMAF){
 #' @importFrom utils setTxtProgressBar txtProgressBar
 #' @export
 #'
-merge.bins <- function(rcmethlvl, statecalls, gap){
+merge.bins <- function(rcmethlvl, statecalls, rc.methlvl.out, gap){
   mylist <- list()
   result <- list()
 
@@ -117,9 +117,7 @@ merge.bins <- function(rcmethlvl, statecalls, gap){
   gr1 <- GRanges(seqnames=matrix1$seqnames, ranges=IRanges(start=matrix1$start, end=matrix1$end))
   values(gr1) <- cbind(values(gr1), pattern=apply(matrix1[,c(4:NCOL(matrix1))], 1, paste, collapse=""))
 
-  # the rcmethlvl matrix, also add the state-call pattern
-  gr2 <- GRanges(seqnames=matrix2$seqnames, ranges=IRanges(start=matrix2$start, end=matrix2$end))
-  values(gr2) <- cbind(values(gr2), values(gr1), DataFrame(matrix2[,c(4:NCOL(matrix2))]))
+  message("\nNow, Merging overlapping and consecutive bins...\n")
 
   # this is for the state-calls: collapse overlapping bins if pattern is same
   grl_reduce <- unlist(GenomicRanges::reduce(split(gr1, gr1$pattern)))
@@ -127,6 +125,10 @@ merge.bins <- function(rcmethlvl, statecalls, gap){
   result$pattern <- names(result)
   result <- data.frame(result)
   final.status.collect <- result %>% dplyr::left_join(extract.pattern, by=c("pattern"))
+
+  # the rcmethlvl matrix, also add the state-call pattern
+  gr2 <- GRanges(seqnames=matrix2$seqnames, ranges=IRanges(start=matrix2$start, end=matrix2$end))
+  values(gr2) <- cbind(values(gr2), values(gr1), DataFrame(matrix2[,c(4:NCOL(matrix2))]))
 
   # this is for the rcmethlvl: collapse bins and take average of the bins
   mycols <- colnames(matrix1)[4:NCOL(matrix1)]
@@ -137,8 +139,6 @@ merge.bins <- function(rcmethlvl, statecalls, gap){
     }
     return(out)
   }
-
-  message("\nNow, Merging overlapping and consecutive bins...\n")
   # split rcmthlvl matrix based on pattterns
   grl <- split(gr2, gr2$pattern)
 
@@ -155,14 +155,14 @@ merge.bins <- function(rcmethlvl, statecalls, gap){
     setTxtProgressBar(pb3, x)
   }
   close(pb3)
-
   f.df <- unlist(mylist)
   f.df <- do.call(rbind, lapply(f.df, data.frame))
   f.df <- f.df[order(f.df[,1], f.df[,2]),]
   f.df[,(6:NCOL(f.df))] <- lapply(f.df[,(6:NCOL(f.df))], function(xy){ floorDec(xy,5) })
+  final.rcmethlvl.collect <- subset(f.df, select = -c(strand))
 
   final.status.collect <- subset(final.status.collect, select = -c(strand, pattern))
-  final.rcmethlvl.collect <- subset(f.df, select = -c(strand))
+
   return(list(final.status.collect, final.rcmethlvl.collect))
 }
 
@@ -182,76 +182,147 @@ DMR.list.out <- function(context.df, out.name, data.out){
 }
 
 #------------------------------------------------------------------------------------------------
+#' @param data.dir
+#' @importFrom IRanges subsetByOverlaps
+#' @importFrom dplyr semi_join
+#' @importFrom GenomicRanges findOverlaps
+#' @importFrom data.table rbindlist
+#' @importFrom data.table fread
+#' @importFrom GenomicRanges intersect
+#' @importFrom tidyr separate
+#' @importFrom tidyr unnest
+#' @importFrom dplyr mutate
+#' @importFrom utils setTxtProgressBar txtProgressBar
+#'
 context.specific.DMRs <- function(data.dir){
   file1 <- paste0(data.dir, "/CG_StateCalls-filtered.txt")
   file2 <- paste0(data.dir, "/CHG_StateCalls-filtered.txt")
   file3 <- paste0(data.dir, "/CHH_StateCalls-filtered.txt")
 
   if (file.exists(file1) && file.exists(file2) && file.exists(file3)){
-    CG.out <- fread(file1, header=TRUE)
-    CHG.out <- fread(file2, header=TRUE)
-    CHH.out <- fread(file3, header=TRUE)
+    CG.out <- data.table::fread(file1, header=TRUE)
+    CHG.out <- data.table::fread(file2, header=TRUE)
+    CHH.out <- data.table::fread(file3, header=TRUE)
 
     CG.gr <- GRanges(seqnames=CG.out$seqnames, ranges=IRanges(CG.out$start, end=CG.out$end))
     CHG.gr <- GRanges(seqnames=CHG.out$seqnames, ranges=IRanges(CHG.out$start, end=CHG.out$end))
     CHH.gr <- GRanges(seqnames=CHH.out$seqnames, ranges=IRanges(CHH.out$start, end=CHH.out$end))
 
     #CG.only
-    out1 <- subsetByOverlaps(CG.gr, CHG.gr, invert = TRUE)
-    CG.1 <- subsetByOverlaps(out1, CHH.gr, invert = TRUE)
+    message("Generating CG-only DMRs")
+    out1 <- IRanges::subsetByOverlaps(CG.gr, CHG.gr, invert = TRUE)
+    CG.1 <- IRanges::subsetByOverlaps(out1, CHH.gr, invert = TRUE)
     CG.1 <- as.data.frame(CG.1)
     CG.1$seqnames <- as.integer(as.character(CG.1$seqnames))
     CG.only <- CG.out %>% dplyr::semi_join(CG.1, by = c("seqnames","start","end"))
     DMR.list.out(context.df=CG.only,
                  out.name="CG-only-DMRs",
                  data.out=data.dir)
+    message("Done!")
 
     #CHG.only
-    out2 <- subsetByOverlaps(CHG.gr, CG.gr, invert = TRUE)
-    CHG.1 <- subsetByOverlaps(out2, CHH.gr, invert = TRUE)
+    message("Generating CHG-only DMRs")
+    out2 <- IRanges::subsetByOverlaps(CHG.gr, CG.gr, invert = TRUE)
+    CHG.1 <- IRanges::subsetByOverlaps(out2, CHH.gr, invert = TRUE)
     CHG.1 <- as.data.frame(CHG.1)
     CHG.1$seqnames <-as.integer(as.character(CHG.1$seqnames))
     CHG.only <- CHG.out %>% dplyr::semi_join(CHG.1, by = c("seqnames","start","end"))
     DMR.list.out(context.df=CHG.only,
                  out.name="CHG-only-DMRs",
                  data.out=data.dir)
+    message("Done!")
 
     #CHH.only
-    out3 <- subsetByOverlaps(CHH.gr, CG.gr, invert = TRUE)
-    CHH.1 <- subsetByOverlaps(out3, CHG.gr, invert = TRUE)
+    message("Generating CHH-only DMRs")
+    out3 <- IRanges::subsetByOverlaps(CHH.gr, CG.gr, invert = TRUE)
+    CHH.1 <- IRanges::subsetByOverlaps(out3, CHG.gr, invert = TRUE)
     CHH.1 <- as.data.frame(CHH.1)
     CHH.1$seqnames <-as.integer(as.character(CHH.1$seqnames))
     CHH.only <- CHH.out %>% dplyr::semi_join(CHH.1, by = c("seqnames","start","end"))
     DMR.list.out(context.df=CHH.only,
                  out.name="CHH-only-DMRs",
                  data.out=data.dir)
+    message("Done!")
 
     #non-CG
-    overlaps.nonCG <- findOverlaps(CHG.gr, CHH.gr, ignore.strand=TRUE)
-    overlaps.hits.nonCG <- subsetByOverlaps(CHG.gr, CHH.gr)
+    message("Generating non-CG DMRs")
+    nonCG.collect <- list()
+    overlaps.nonCG <- GenomicRanges::findOverlaps(CHG.gr, CHH.gr, ignore.strand=TRUE)
+    overlaps.hits.nonCG <- IRanges::subsetByOverlaps(CHG.gr, CHH.gr)
     mcols(overlaps.hits.nonCG)$DMRs.CHH.coord<- CharacterList(split(CHH.gr[subjectHits(overlaps.nonCG)], queryHits(overlaps.nonCG)))
-    out.nonCG <- subsetByOverlaps(overlaps.hits.nonCG, CG.gr, invert = TRUE)
-    nonCG <- data.frame(out.nonCG)
-    nonCG$DMRs.CHG.coord <- paste0(nonCG$seqnames,":",nonCG$start,"-",nonCG$end)
-    nonCG <- nonCG[,c(6,7)]
-    DMR.list.out(context.df=nonCG,
+    out.nonCG <- IRanges::subsetByOverlaps(overlaps.hits.nonCG, CG.gr, invert = TRUE)
+    nonCG <- data.frame(out.nonCG) %>% dplyr::mutate(DMRs.CHH.coord = strsplit(as.character(DMRs.CHH.coord), ",")) %>% tidyr::unnest(c(DMRs.CHH.coord))
+    nonCG.clean <- data.frame(lapply(nonCG, function(k) gsub ("[\\c]|[()]|\"|^ .", "", k)))
+    nonCG.clean <- nonCG.clean %>% tidyr::separate(DMRs.CHH.coord, c("CHH.seqnames","CHH.start","CHH.stop"), sep = '([-:])')
+    nonCG.clean <- nonCG.clean[-c(4,5)]
+    colnames(nonCG.clean)[1] <- "CHG.seqnames"
+    colnames(nonCG.clean)[2] <- "CHG.start"
+    colnames(nonCG.clean)[3] <- "CHG.stop"
+
+    pb4 <- txtProgressBar(min = 1, max = NROW(nonCG.clean), char = "=", style = 3, file = "")
+
+    for (i1 in 1:NROW(nonCG.clean)){
+      myrow <- nonCG.clean[i1,]
+      a=makeGRangesFromDataFrame(myrow[,c("CHG.seqnames","CHG.start","CHG.stop")])
+      b=makeGRangesFromDataFrame(myrow[,c("CHH.seqnames","CHH.start","CHH.stop")])
+      out <- data.frame(GenomicRanges::intersect(a,b))
+      myrow$merged.seqnames <- out$seqnames
+      myrow$merged.start <- out$start
+      myrow$merged.stop <- out$end
+      nonCG.collect[[i1]] <- data.frame(myrow)
+      Sys.sleep(1/NROW(nonCG.clean))
+      setTxtProgressBar(pb4, i1)
+    }
+    close(pb4)
+    DMR.list.out(context.df=data.table::rbindlist(nonCG.collect),
                  out.name="nonCG-DMRs",
                  data.out=data.dir)
+    message("Done!")
 
     #multi-context
-    overlaps.1 <- findOverlaps(CG.gr, CHG.gr, ignore.strand=TRUE)
-    overlaps.hits.1 <- subsetByOverlaps(CG.gr, CHG.gr)
-    mcols(overlaps.hits.1)$DMRs.CHG<- CharacterList(split(CHG.gr[subjectHits(overlaps.1)], queryHits(overlaps.1)))
-    overlaps.2 <- findOverlaps(overlaps.hits.1, CHH.gr, ignore.strand=TRUE)
-    overlaps.hits.2 <- subsetByOverlaps(overlaps.hits.1, CHH.gr)
-    mcols(overlaps.hits.2)$DMRs.CHH <- CharacterList(split(CHH.gr[subjectHits(overlaps.2)], queryHits(overlaps.2)))
-    multi.context.1 <- data.frame(overlaps.hits.2)
-    multi.context.1$DMRs.CG <- paste0(multi.context.1$seqnames,":",multi.context.1$start,"-",multi.context.1$end)
-    multi.context <- multi.context.1[,c(8,6,7)]
-    multi.context <- data.frame(multi.context)
-    DMR.list.out(context.df=multi.context,
+    message("Generating multi-context DMRs")
+    multi.context.collect <- list()
+    overlaps.1 <- GenomicRanges::findOverlaps(CG.gr, CHG.gr, ignore.strand=TRUE)
+    overlaps.hits.1 <- IRanges::subsetByOverlaps(CG.gr, CHG.gr)
+    mcols(overlaps.hits.1)$DMRs.CHG.coord <- CharacterList(split(CHG.gr[subjectHits(overlaps.1)], queryHits(overlaps.1)))
+    overlaps.2 <- GenomicRanges::findOverlaps(overlaps.hits.1, CHH.gr, ignore.strand=TRUE)
+    overlaps.hits.2 <- IRanges::subsetByOverlaps(overlaps.hits.1, CHH.gr)
+    mcols(overlaps.hits.2)$DMRs.CHH.coord <- CharacterList(split(CHH.gr[subjectHits(overlaps.2)], queryHits(overlaps.2)))
+    multi.context.1 <- data.frame(overlaps.hits.2) %>% dplyr::mutate(DMRs.CHG.coord = strsplit(as.character(DMRs.CHG.coord), ",")) %>% tidyr::unnest(c(DMRs.CHG.coord))
+    multi.context.1.clean <- data.frame(lapply(multi.context.1, function(k) gsub ("[\\c]|[()]|\"|^ .", "", k)))
+    multi.context.1.clean <- multi.context.1.clean %>% tidyr::separate(DMRs.CHG.coord, c("CHG.seqnames","CHG.start","CHG.stop"), sep = '([-:])')
+    multi.context.2.clean <- data.frame(multi.context.1.clean) %>% dplyr::mutate(DMRs.CHH.coord = strsplit(as.character(DMRs.CHH.coord), ",")) %>% tidyr::unnest(c(DMRs.CHH.coord))
+    multi.context.2.clean <- multi.context.2.clean %>% tidyr::separate(DMRs.CHH.coord, c("CHH.seqnames","CHH.start","CHH.stop"), sep = '([-:])')
+    multi.context.2.clean <- multi.context.2.clean[-c(4,5)]
+    colnames(multi.context.2.clean)[1] <- "CG.seqnames"
+    colnames(multi.context.2.clean)[2] <- "CG.start"
+    colnames(multi.context.2.clean)[3] <- "CG.stop"
+
+    pb5 <- txtProgressBar(min = 1, max = NROW(multi.context.2.clean), char = "=", style = 3, file = "")
+
+    for (i2 in 1:NROW(multi.context.2.clean)){
+      myrow.x <- multi.context.2.clean[i2,]
+      a=makeGRangesFromDataFrame(myrow.x[,c("CG.seqnames","CG.start","CG.stop")])
+      b=makeGRangesFromDataFrame(myrow.x[,c("CHG.seqnames","CHG.start","CHG.stop")])
+      c=makeGRangesFromDataFrame(myrow.x[,c("CHH.seqnames","CHH.start","CHH.stop")])
+      out1 <- GenomicRanges::intersect(a,b)
+      out2 <- data.frame(GenomicRanges::intersect(out1,c))
+      if(NROW(out2)!=0){
+        myrow.x$merged.seqnames <- out2$seqnames
+        myrow.x$merged.start <- out2$start
+        myrow.x$merged.stop <- out2$end
+        multi.context.collect[[i2]] <- data.frame(myrow.x)
+      }
+      Sys.sleep(1/NROW(multi.context.2.clean))
+      setTxtProgressBar(pb5, i2)
+    }
+    close(pb5)
+    f <- data.table::rbindlist(multi.context.collect)
+
+    DMR.list.out(context.df=f,
                  out.name="multi-context-DMRs",
                  data.out=data.dir)
+    message("Done!")
   } else {
     message("Filtered DMR matrix files for all contexts donot exist!")
   }
