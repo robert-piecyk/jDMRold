@@ -9,6 +9,7 @@ filterDMRmatrix(
   replicate.consensus = NULL,
   gridDMR = TRUE,
   data.dir,
+  rc.methlvl.out = FALSE,
   context.specific.DMRs = TRUE
 )
 }

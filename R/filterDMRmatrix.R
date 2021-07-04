@@ -102,7 +102,9 @@ filterEpiMAF <- function(mat1, mat2, epiMAF){
 #' @importFrom utils setTxtProgressBar txtProgressBar
 #' @export
 #'
-merge.bins <- function(rcmethlvl, statecalls, rc.methlvl.out, gap){
+merge.bins <- function(rcmethlvl, statecalls, rc.methlvl.out){
+  gap=1
+
   mylist <- list()
   result <- list()
 
@@ -126,53 +128,61 @@ merge.bins <- function(rcmethlvl, statecalls, rc.methlvl.out, gap){
   result <- data.frame(result)
   final.status.collect <- result %>% dplyr::left_join(extract.pattern, by=c("pattern"))
 
-  # the rcmethlvl matrix, also add the state-call pattern
-  gr2 <- GRanges(seqnames=matrix2$seqnames, ranges=IRanges(start=matrix2$start, end=matrix2$end))
-  values(gr2) <- cbind(values(gr2), values(gr1), DataFrame(matrix2[,c(4:NCOL(matrix2))]))
+  if (rc.methlvl.out==TRUE){
+    # the rcmethlvl matrix, also add the state-call pattern
+    gr2 <- GRanges(seqnames=matrix2$seqnames, ranges=IRanges(start=matrix2$start, end=matrix2$end))
+    values(gr2) <- cbind(values(gr2), values(gr1), DataFrame(matrix2[,c(4:NCOL(matrix2))]))
 
-  # this is for the rcmethlvl: collapse bins and take average of the bins
-  mycols <- colnames(matrix1)[4:NCOL(matrix1)]
-  fn = function(u){
-    out = GenomicRanges::reduce(u)
-    for (x in 1:length(mycols)){
-      eval(parse(text=paste0("out$", mycols[x], " = mean(u$", mycols[x], ")")))
+    # this is for the rcmethlvl: collapse bins and take average of the bins
+    mycols <- colnames(matrix1)[4:NCOL(matrix1)]
+    fn = function(u){
+      out = GenomicRanges::reduce(u)
+      for (x in 1:length(mycols)){
+        eval(parse(text=paste0("out$", mycols[x], " = mean(u$", mycols[x], ")")))
+      }
+      return(out)
     }
-    return(out)
+    # split rcmthlvl matrix based on pattterns
+    grl <- split(gr2, gr2$pattern)
+
+    pb3 <- txtProgressBar(min = 1, max = length(grl), char = "=", style = 3, file = "")
+
+    for (x in 1:length(grl)){
+      a <- data.frame(grl[[x]])
+      a1 <- a %>% arrange(pattern, start) %>% group_by(pattern) %>% mutate(indx = cumsum(start > lag(end, default = start[1]) + gap))
+      a1.gr <- makeGRangesFromDataFrame(a1, keep.extra.columns=TRUE)
+      df <- lapply(split(a1.gr, a1.gr$indx), fn)
+      mylist[[x]] <- df
+
+      Sys.sleep(0.05)
+      setTxtProgressBar(pb3, x)
+    }
+    close(pb3)
+
+    f.df <- unlist(mylist)
+    f.df <- do.call(rbind, lapply(f.df, data.frame))
+    f.df <- f.df[order(f.df[,1], f.df[,2]),]
+    f.df[,(6:NCOL(f.df))] <- lapply(f.df[,(6:NCOL(f.df))], function(xy){ floorDec(xy,5) })
+    final.rcmethlvl.collect <- subset(f.df, select = -c(strand))
+    final.status.collect <- subset(final.status.collect, select = -c(strand, pattern))
+    return(list(final.status.collect, final.rcmethlvl.collect))
+  } else {
+    final.status.collect <- subset(final.status.collect, select = -c(strand, pattern))
+    final.rcmethlvl.collect <- NULL
+    return(list(final.status.collect, final.rcmethlvl.collect))
   }
-  # split rcmthlvl matrix based on pattterns
-  grl <- split(gr2, gr2$pattern)
-
-  pb3 <- txtProgressBar(min = 1, max = length(grl), char = "=", style = 3, file = "")
-
-  for (x in 1:length(grl)){
-    a <- data.frame(grl[[x]])
-    a1 <- a %>% arrange(pattern, start) %>% group_by(pattern) %>% mutate(indx = cumsum(start > lag(end, default = start[1]) + gap))
-    a1.gr <- makeGRangesFromDataFrame(a1, keep.extra.columns=TRUE)
-    df <- lapply(split(a1.gr, a1.gr$indx), fn)
-    mylist[[x]] <- df
-
-    Sys.sleep(0.05)
-    setTxtProgressBar(pb3, x)
-  }
-  close(pb3)
-  f.df <- unlist(mylist)
-  f.df <- do.call(rbind, lapply(f.df, data.frame))
-  f.df <- f.df[order(f.df[,1], f.df[,2]),]
-  f.df[,(6:NCOL(f.df))] <- lapply(f.df[,(6:NCOL(f.df))], function(xy){ floorDec(xy,5) })
-  final.rcmethlvl.collect <- subset(f.df, select = -c(strand))
-
-  final.status.collect <- subset(final.status.collect, select = -c(strand, pattern))
-
-  return(list(final.status.collect, final.rcmethlvl.collect))
 }
-
 #------------------------------------------------------------------------------------------------
 
 export.out <- function(out.rcmethlvl, out.statecalls, context, out.name1, out.name2, data.out){
   fwrite(x=out.statecalls,
-    file=paste0(data.out, "/", context, "_", out.name1, ".txt"), quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
-  fwrite(x=out.rcmethlvl,
-    file=paste0(data.out, "/", context, "_", out.name2, ".txt"), quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
+         file=paste0(data.out, "/", context, "_", out.name1, ".txt"), quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
+  if (!is.null(out.rcmethlvl)) {
+    fwrite(x=out.rcmethlvl,
+           file=paste0(data.out, "/", context, "_", out.name2, ".txt"), quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
+  } else {
+    message("Generate recalibrated methylation levels set to FALSE!")
+  }
 }
 
 #------------------------------------------------------------------------------------------------
@@ -339,7 +349,7 @@ context.specific.DMRs <- function(data.dir){
 #' @importFrom data.table fread
 #' @export
 #'
-filterDMRmatrix <- function(epiMAF.cutoff=NULL, replicate.consensus=NULL, gridDMR=TRUE, data.dir, context.specific.DMRs=TRUE) {
+filterDMRmatrix <- function(epiMAF.cutoff=NULL, replicate.consensus=NULL, gridDMR=TRUE, data.dir, rc.methlvl.out=FALSE, context.specific.DMRs=TRUE) {
 
   list.status <- list.files(data.dir, pattern="_StateCalls.txt", full.names=TRUE)
   if (length(list.status) != 0){
@@ -353,7 +363,7 @@ filterDMRmatrix <- function(epiMAF.cutoff=NULL, replicate.consensus=NULL, gridDM
       status.collect <- fread(list.status[i], header=T)
       rc.methlevel.collect <- fread(paste0(data.dir, "/", context, "_rcMethlvl.txt"), header=T)
 
-      message("Removing non-polymorphic patterns...\n")
+      message("Removing non-polymorphic patterns...")
 
       index <- which(rowSums(status.collect[,4:NCOL(status.collect)]) != 0 &
                        rowSums(status.collect[,4:NCOL(status.collect)]) != NCOL(status.collect)-3)
@@ -363,12 +373,12 @@ filterDMRmatrix <- function(epiMAF.cutoff=NULL, replicate.consensus=NULL, gridDM
 
       if (gridDMR==TRUE) {
 
-        message("\ngrid DMR set to TRUE")
+        message("grid DMR set to TRUE")
         if (is.null(epiMAF.cutoff) && is.null(replicate.consensus)) {
           message("Both, epiMAF and replicate consensus set to NULL")
           out1=status.collect
           out2=rc.methlevel.collect
-          out <- merge.bins(statecalls=out1, rcmethlvl=out2, gap=1)
+          out <- merge.bins(statecalls=out1, rcmethlvl=out2, rc.methlvl.out)
           export.out(out.statecalls=out[[1]],
                      out.rcmethlvl=out[[2]],
                      context=context,
@@ -386,7 +396,7 @@ filterDMRmatrix <- function(epiMAF.cutoff=NULL, replicate.consensus=NULL, gridDM
             # For Population data remove the epiMAF column
             out1=mydf[[1]][,-c("epiMAF")]
             out2=mydf[[2]]
-            out <- merge.bins(statecalls=out1, rcmethlvl=out2, gap=1)
+            out <- merge.bins(statecalls=out1, rcmethlvl=out2, rc.methlvl.out)
             export.out(out.statecalls=out[[1]],
                        out.rcmethlvl=out[[2]],
                        context=context,
@@ -405,7 +415,7 @@ filterDMRmatrix <- function(epiMAF.cutoff=NULL, replicate.consensus=NULL, gridDM
           if (!is.null(mydf)){
             out1=mydf[[1]]
             out2=mydf[[2]]
-            out <- merge.bins(statecalls=out1, rcmethlvl=out2, gap=1)
+            out <- merge.bins(statecalls=out1, rcmethlvl=out2, rc.methlvl.out)
             export.out(out.statecalls=out[[1]],
                        out.rcmethlvl=out[[2]],
                        context=context,
