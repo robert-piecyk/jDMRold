@@ -5,7 +5,7 @@
 \title{Builds a DMR matrix for all samples}
 \usage{
 makeDMRmatrix(
-  context,
+  context = c("CG", "CHG", "CHH"),
   samplefiles,
   input.dir,
   out.dir,
@@ -21,7 +21,7 @@ makeDMRmatrix(
 
 \item{out.dir}{output directory}
 
-\item{include.intermediate}{A logical specifying whether or not the intermediate component should be included in the HMM.}
+\item{include.intermediate}{A logical specifying whether or not the intermediate component should be included in the HMM model.By default this option is set as FALSE.}
 }
 \description{
 This function generates a binary matrix, a matrix of recalibrated methylation levels and posterior probabilities for all samples.

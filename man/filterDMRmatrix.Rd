@@ -14,13 +14,17 @@ filterDMRmatrix(
 )
 }
 \arguments{
-\item{epiMAF.cutoff}{Filter for Minor Epi-Allele frequency. By default this option is set to NULL. Applicable for population level data.}
+\item{epiMAF.cutoff}{Filter for Minor Epi-Allele frequency (for e.g 0.33). Applicable for population level data. By default this option is set to NULL.}
 
-\item{replicate.consensus}{Percentage of concordance in methylation states among samples with multiple replicates. By default this option is set to NULL. Useful for Control/treatment data}
+\item{replicate.consensus}{Percentage of concordance in methylation states among samples with multiple replicates. Applicable for Control/treatment data. By default this option is set to NULL.}
 
-\item{gridDMR}{Logical specifying if grid DMR approach was used for calling DMRs.}
+\item{gridDMR}{Logical specifying if grid DMR approach was used for calling DMRs. By default this option is set to TRUE. If Cluster approach was used, set it to FALSE.}
 
-\item{data.dir}{Directory containing DMR matrix files. Looks for files with suffix, _StateCalls.txt and _rcMethlvl.txt}
+\item{data.dir}{Directory containing DMR matrix files. Looks for files with suffix("_StateCalls.txt" and "_rcMethlvl.txt")}
+
+\item{rc.methlvl.out}{Logical whether to output filtered matrix with methylation levels. By default this option is set to FALSE.}
+
+\item{context.specific.DMRs}{Logical whether to output list of CG-only, CHG-only, CHH-only, nonCG and multi-context DMRs. By default this option is set to TRUE.}
 }
 \description{
 Filters non-polymorphic patterns by default.

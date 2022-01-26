@@ -47,7 +47,7 @@ write.out <- function(out.df, data.dir, out.name, context){
 #'
 #' @param context cytosine context
 #' @param samplefiles file containing full path of base level methylation calls, sample names and replicates(optional)
-#' @param include.intermediate A logical specifying whether or not the intermediate component should be included in the HMM.
+#' @param include.intermediate A logical specifying whether or not the intermediate component should be included in the HMM model.By default this option is set as FALSE.
 #' @param input.dir input directory containing all region level methylome calls
 #' @param out.dir output directory
 #' @importFrom data.table fread
@@ -55,7 +55,7 @@ write.out <- function(out.df, data.dir, out.name, context){
 #' @importFrom data.table rbindlist
 #' @export
 #'
-makeDMRmatrix <- function(context, samplefiles, input.dir, out.dir, include.intermediate=FALSE) {
+makeDMRmatrix <- function(context=c("CG","CHG","CHH"), samplefiles, input.dir, out.dir, include.intermediate=FALSE) {
   # Read the sample file with filenames
   samplelist <- fread(samplefiles, header=T)
   for (j in  1:length(context)){

@@ -143,12 +143,14 @@ modifiedExportMethylome <- function(model, out.dir, context, name) {
 makeRegionsImpute <- function(df, context, refRegion, mincov, nCytosines) {
 
   #regions file
-  tmp_reg <- dget(refRegion)
+  #tmp_reg <- dget(refRegion)
+  tmp_reg <- refRegion
   data <- as.data.frame(tmp_reg$reg.obs)
+  data <- data %>% dplyr::filter(data$chr != "M" & data$chr != "C")
   #colnames(data)[which(names(data) == "cluster.size")] <- "cluster.length"
 
   #reference methimpute file
-  ref_data <- fread(df, skip = 1, select = c("V1","V2","V3","V4","V5","V6"))
+  ref_data <- data.table::fread(df, skip = 1, select = c("V1","V2","V3","V4","V5","V6"))
 
   #remove Mt and chloroplast coordinates. Following is for Arabidopsis only
   ref_data <- ref_data %>% dplyr::filter(ref_data$V1 != "M" & ref_data$V1 != "C")
@@ -193,12 +195,18 @@ makeRegionsImpute <- function(df, context, refRegion, mincov, nCytosines) {
     if (NROW(methylated) != NROW(counts) ){
       missingr <- which(!rownames(data.frame(data_gr)) %in% methylated$Group.1)
 
-      for(item in seq_len(NROW((missingr)))){
-        methylated <- rbind (c(missingr[item],0), methylated)
-        methylated <- methylated[order(methylated$Group.1),]
-        total <- rbind (c(missingr[item],0), total)
-        total <- total[order(total$Group.1),]
-      }
+      methylated <- dplyr::bind_rows(data.frame(Group.1=missingr, x=0), methylated)
+      methylated <- methylated[order(methylated$Group.1),]
+
+      total <- dplyr::bind_rows(data.frame(Group.1=missingr,x=0), total)
+      total <- total[order(total$Group.1),]
+
+      # for(item in seq_len(NROW((missingr)))){
+      #   methylated <- rbind(c(missingr[item],0), methylated)
+      #   methylated <- methylated[order(methylated$Group.1),]
+      #   total <- rbind(c(missingr[item],0), total)
+      #   total <- total[order(total$Group.1),]
+      # }
     }
     counts[,"methylated"] <- methylated$x
     counts[,"total"] <- total$x
@@ -209,7 +217,6 @@ makeRegionsImpute <- function(df, context, refRegion, mincov, nCytosines) {
 }
 
 #--------------------------------------------------------------------------
-
 makeMethimpute <- function(df, context, fit.plot, fit.name, refRegion,
                          include.intermediate, probability, out.dir, name, mincov, nCytosines){
   methylome.data <- makeRegionsImpute(df, context, refRegion, mincov, nCytosines)

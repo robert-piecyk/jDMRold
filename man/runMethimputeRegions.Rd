@@ -5,32 +5,32 @@
 \title{Run Methimpute for Regions}
 \usage{
 runMethimputeRegions(
-  samplefiles,
-  Regionfiles,
-  genome,
-  context,
   out.dir,
+  fasta.file,
+  samplefiles,
+  genome,
+  contexts = c("CG", "CHG", "CHH"),
   include.intermediate = FALSE,
   mincov = 0,
   nCytosines = 0
 )
 }
 \arguments{
-\item{samplefiles}{a text file containing path to samples and sample names, replicate info}
-
-\item{Regionfiles}{output of makeReg, containing coordinates of cytosine clusters/regions}
-
-\item{genome}{genome label for .e.g Arabidopsis}
-
-\item{context}{cytosine context}
-
 \item{out.dir}{output directory}
 
-\item{include.intermediate}{A logical specifying wheter or not the intermediate component should be included in the HMM.By default it is set as FALSE.}
+\item{fasta.file}{path to genome fasta file}
 
-\item{mincov}{Minimum read coverage over cytosines}
+\item{samplefiles}{a text file containing path to samples and sample names. For control/treatment data an additional column specifying the replicates is required.}
 
-\item{nCytosines}{Minimum number of cytsoines}
+\item{genome}{Genome name as a string .e.g Arabidopsis or Human etc}
+
+\item{contexts}{cytosine contexts as a vector. By default this option is set for all 3 cytosine contexts CG, CHG and CHH.}
+
+\item{include.intermediate}{A logical specifying whether or not the intermediate component should be included in the HMM model.By default it is set as FALSE.}
+
+\item{mincov}{Minimum read coverage over cytosines. Default is set as 0.}
+
+\item{nCytosines}{Minimum number of cytosines. Default is set as 0.}
 }
 \description{
 This function runs a HMM model on identified Cytosine clusters

@@ -2,7 +2,7 @@
 % Please edit documentation in R/makeReg.R
 \name{makeReg}
 \alias{makeReg}
-\title{Regnerates cytosine clusters in genome}
+\title{Generates cytosine clusters in genome}
 \usage{
 makeReg(
   ref.genome,

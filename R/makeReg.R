@@ -1,4 +1,4 @@
-#' Regnerates cytosine clusters in genome
+#' Generates cytosine clusters in genome
 #'
 #' Uses the extracted cytosines from CfromFASTA and finds clsuters of cytosines along the genome.
 #'
@@ -17,7 +17,7 @@
 #' @importFrom utils setTxtProgressBar txtProgressBar
 #' @export
 #'
-
+#'
 makeReg<-function(ref.genome, contexts, chr, min.C, N.boot, N.sim.C, fp.rate, set.tol, out.dir, out.name, makeRegnull)
 {
 
@@ -297,7 +297,6 @@ makeReg<-function(ref.genome, contexts, chr, min.C, N.boot, N.sim.C, fp.rate, se
         cat("C NULL omitted", "\n")
       }
     }
-
 
     if (context.temp == "CG")
     {

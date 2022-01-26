@@ -28,4 +28,4 @@ Imports:
     minpack.lm (>= 1.2),
     S4Vectors (>= 0.24),
     stats (>= 3.6.3)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2

@@ -6,37 +6,37 @@
 \usage{
 runMethimputeGrid(
   out.dir,
-  fasta,
-  win,
-  step,
-  genome,
+  fasta.file,
   samplefiles,
-  context,
-  mincov,
+  min.C,
+  sliding.window = FALSE,
+  genome,
+  contexts = c("CG", "CHG", "CHH"),
+  mincov = 0,
   include.intermediate = FALSE,
-  nCytosines
+  nCytosines = 0
 )
 }
 \arguments{
 \item{out.dir}{output directory}
 
-\item{fasta}{path to genome fasta files}
+\item{fasta.file}{path to genome fasta file}
 
-\item{win}{window size}
+\item{samplefiles}{a text file containing path to samples and sample names. For control/treatment data an additional column specifying the replicates is required.}
 
-\item{step}{window step-size}
+\item{min.C}{minimum number of cytosines in at least 90 percent of the bins/regions.}
 
-\item{genome}{genome label for .e.g Arabidopsis}
+\item{sliding.window}{Logical specifying whether to use sliding windows while binning genome. By default non-sliding window with equal bin-size and step-size are used (set to FALSE).}
 
-\item{samplefiles}{a text file containing path to samples and sample names, replicate info}
+\item{genome}{Genome name as a string .e.g Arabidopsis or Human etc}
 
-\item{context}{cytosine context}
+\item{contexts}{cytosine contexts as a vector. By default this option is set for all 3 cytosine contexts CG, CHG and CHH.}
 
-\item{mincov}{Minimum read coverage over cytosines}
+\item{mincov}{Minimum read coverage over cytosines. Default is set as 0.}
 
-\item{include.intermediate}{A logical specifying wheter or not the intermediate component should be included in the HMM.By default it is set as FALSE.}
+\item{include.intermediate}{A logical specifying whether or not the intermediate component should be included in the HMM model.By default it is set as FALSE.}
 
-\item{nCytosines}{Minimum number of cytsoines}
+\item{nCytosines}{Minimum number of cytosines. Default is set as 0.}
 }
 \description{
 this function runs a HMM model on a genome binned using a sliding/non-sliding window approach

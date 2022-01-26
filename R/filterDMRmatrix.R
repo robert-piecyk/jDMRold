@@ -119,7 +119,7 @@ merge.bins <- function(rcmethlvl, statecalls, rc.methlvl.out){
   gr1 <- GRanges(seqnames=matrix1$seqnames, ranges=IRanges(start=matrix1$start, end=matrix1$end))
   values(gr1) <- cbind(values(gr1), pattern=apply(matrix1[,c(4:NCOL(matrix1))], 1, paste, collapse=""))
 
-  message("\nNow, Merging overlapping and consecutive bins...\n")
+  message("Now, Merging overlapping and consecutive bins...\n")
 
   # this is for the state-calls: collapse overlapping bins if pattern is same
   grl_reduce <- unlist(GenomicRanges::reduce(split(gr1, gr1$pattern)))
@@ -182,6 +182,7 @@ export.out <- function(out.rcmethlvl, out.statecalls, context, out.name1, out.na
            file=paste0(data.out, "/", context, "_", out.name2, ".txt"), quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
   } else {
     message("Generate recalibrated methylation levels set to FALSE!")
+    message("------------------------------------------------------", "\n")
   }
 }
 
@@ -334,7 +335,7 @@ context.specific.DMRs <- function(data.dir){
                  data.out=data.dir)
     message("Done!")
   } else {
-    message("Filtered DMR matrix files for all contexts donot exist!")
+    stop("Filtered DMR matrix files for all contexts donot exist!")
   }
 }
 
@@ -342,20 +343,27 @@ context.specific.DMRs <- function(data.dir){
 #' filter DMR matrix
 #'
 #' Filters non-polymorphic patterns by default.
-#' @param epiMAF.cutoff Filter for Minor Epi-Allele frequency. By default this option is set to NULL. Applicable for population level data.
-#' @param replicate.consensus Percentage of concordance in methylation states among samples with multiple replicates. By default this option is set to NULL. Useful for Control/treatment data
-#' @param gridDMR Logical specifying if grid DMR approach was used for calling DMRs.
-#' @param data.dir Directory containing DMR matrix files. Looks for files with suffix, _StateCalls.txt and _rcMethlvl.txt
+#' @param epiMAF.cutoff Filter for Minor Epi-Allele frequency (for e.g 0.33). Applicable for population level data. By default this option is set to NULL.
+#' @param replicate.consensus Percentage of concordance in methylation states among samples with multiple replicates. Applicable for Control/treatment data. By default this option is set to NULL.
+#' @param gridDMR Logical specifying if grid DMR approach was used for calling DMRs. By default this option is set to TRUE. If Cluster approach was used, set it to FALSE.
+#' @param data.dir Directory containing DMR matrix files. Looks for files with suffix("_StateCalls.txt" and "_rcMethlvl.txt")
+#' @param rc.methlvl.out Logical whether to output filtered matrix with methylation levels. By default this option is set to FALSE.
+#' @param context.specific.DMRs Logical whether to output list of CG-only, CHG-only, CHH-only, nonCG and multi-context DMRs. By default this option is set to TRUE.
 #' @importFrom data.table fread
 #' @export
 #'
-filterDMRmatrix <- function(epiMAF.cutoff=NULL, replicate.consensus=NULL, gridDMR=TRUE, data.dir, rc.methlvl.out=FALSE, context.specific.DMRs=TRUE) {
+filterDMRmatrix <- function(epiMAF.cutoff=NULL,
+                            replicate.consensus=NULL,
+                            gridDMR=TRUE,
+                            data.dir,
+                            rc.methlvl.out=FALSE,
+                            context.specific.DMRs=TRUE) {
 
   list.status <- list.files(data.dir, pattern="_StateCalls.txt", full.names=TRUE)
   if (length(list.status) != 0){
     for (i in seq_along(list.status)){
       context <- gsub("_StateCalls.txt", "", basename(list.status[i]))
-      message("Running DMR matrix for ", context, "\n")
+      message("\nRunning DMR matrix for ", context)
 
       #----------------------------------------------
       # Removing non-polymorphic/unchanged patterns
@@ -405,7 +413,6 @@ filterDMRmatrix <- function(epiMAF.cutoff=NULL, replicate.consensus=NULL, gridDM
                        data.out=data.dir)
           }
         }
-
         #----------------------------------------------
         # Optional. Retaining samples based on replicate.consensus
         #----------------------------------------------
@@ -456,7 +463,6 @@ filterDMRmatrix <- function(epiMAF.cutoff=NULL, replicate.consensus=NULL, gridDM
                        data.out=data.dir)
           }
         }
-
         #----------------------------------------------
         # Optional. Retaining samples based on replicate.consensus
         #----------------------------------------------
