@@ -181,6 +181,7 @@ A non-sliding window approach will be used to bin the genome. The bin and step s
 \setlength{\leftskip}{0pt}
 
 ```{r eval=FALSE, include=TRUE}
+library(jDMR)
 
 out.dir <- "/myfolder/DMR-results"
 myfasta <- system.file("extdata","TAIR10_chr_all.fa", package="jDMR")
@@ -224,9 +225,10 @@ head(jDMR.out)
 
 ## Run "makeDMRmatrix"
 
-\setlength{\leftskip}{1cm}
-"makeDMRmatrix" function generates matrix of state calls, rc.meth.lvls  and posterior probabilities for all samples in one dataframe.
+This function generates matrix of state calls, rc.meth.lvls  and posterior probabilities for all samples in one dataframe.
 
+
+\setlength{\leftskip}{1cm}
 **samplefiles**: PATH to file containing description about the samples
 
 **input.dir**: PATH to directory containing region files.
@@ -278,7 +280,7 @@ head(postMax)
 
 \section{Filter DMR matrix}
 
-## Filter the DMR matrix with the following options
+## Filter the DMR matrix 
 
 This function filters the DMR matrix for non-polymorphic patterns.
 
@@ -320,7 +322,7 @@ Additionally, the following files viz, CG-only-DMRs.txt, CHG-only-DMRs.txt, CHH-
 
 \section{Annotate DMRs}
 
-Multiple gff3 annotation files can be supplied as a vector with the \textit{gff} option. Single/multiple files containing filtered DMR matrix should be provided with the \textit{file.list} option.
+This function annotates the lists of DMRs.
 
 \setlength{\leftskip}{1cm}
 
