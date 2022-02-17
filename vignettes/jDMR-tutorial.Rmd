@@ -1,5 +1,5 @@
 ---
-title: "jDMR: a heuristic DMR caller for population-level WGBS data"
+title: "jDMR: a heuristic DMR caller for WGBS data"
 author: ' Rashmi Hazarika, Y.Shahryary & Frank Johannes '
 date: "`r Sys.Date()`"
 output:
@@ -32,174 +32,37 @@ knitr::opts_chunk$set(
 )
 ```
 
-
 \newpage
 
-\section{Identification of cytosine clusters}
-
-jDMR detects DMRs using two approaches a) finding cytosine clusters in the Genome b) using a binning approach. You can use either/or both methods to obtain the region calls. The remaining steps, makeDMRmatrix, filterDMRmatrix are the same for both methods.
-
-```{r results='hide', message=FALSE, warning=FALSE}
-library(jDMR)
-```
-
 ```{r eval=TRUE, include=FALSE}
-library(Biostrings)
 library(data.table)
 ```
 
-```{r eval=FALSE, include=TRUE}
-out.dir <- "/myfolder/DMR-results"
-
-```
-
-```{r eval=TRUE, include=FALSE}
-#out.dir <- paste0("/myfolder/results/", Sys.getenv("LOGNAME"),"/")
-out.dir <- "/Users/rashmi/basedir/jDMR-test/"
-```
-
-## Extract cytosines from FASTA and generate cytosine clusters
-
-Skip this step if you want to run the grid approach for DMR calling. Go to section 2.1, 2.3, 2.4.
-
-Read in the reference genome FASTA file. Here, we will work with chromosome 1 from \textit{Arabidopsis thaliana}.
-
-```{r}
-
-fasta <- system.file("extdata","Arabidopsis_thaliana.TAIR10.dna.chromosome.1.fa.gz", package="jDMR")
-myfasta <- readDNAStringSet(fasta)
-
-```
-
-Run "CfromFASTAv4" function for chromosome 1. This function extracts cytosines from FASTA and generates the output file "cytosine_positions_chr1.csv". 
-
-```{r}
-
-CfromFASTAv4(fasta=myfasta,
-             chr=1,
-             out.dir=out.dir,
-             write.output=TRUE
-             )
-```
-
-Run "makeReg". This function will call "cytosine_positions_chr1.csv" and extract cytosines clusters for "CG" context
-
-```{r eval=FALSE, include=TRUE}
-
-ref.genome <- fread(paste0(out.dir, "/cytosine_positions_chr", 1, ".csv", sep=""))
-
-makeReg(ref.genome=ref.genome,
-        contexts=c("CG","CHG","CHH"),
-        makeRegnull=c(FALSE), 
-        chr=1, 
-        min.C=5, 
-        N.boot=10^5, 
-        N.sim.C="all", 
-        fp.rate=0.01, 
-        set.tol=0.01, 
-        out.dir=out.dir, 
-        out.name="Arabidopsis"
-        )
-
-```
-
-If you want to run for all chromosomes together, combine the two functions "CfromFASTAv4" and "makeReg" into one single script and execute it:
-
-Refer to script, RUN_makeReg.R for the code.
-
-```{r eval=FALSE, include=TRUE}
-
-out.name <- "Arabidopsis"
-contexts <- c("CG", "CHG", "CHH")
-makeNull <- c(TRUE, TRUE, TRUE)
-min.C <- 5
-fp.rate <- 0.01
-
-wd <- "/myfolder/fasta-files"
-# Supply all FASTA files in one folder
-chrfiles <- list.files(paste0(wd,"FASTA"), pattern=paste0("*.fa.gz$"), full.names = TRUE)
-
-# I am creating a new folder "min.C_5" here 
-if (!dir.exists(paste0(out.dir, "min.C_5"))) {
-  cat(paste0("Creating directory "))
-  dir.create(paste0(out.dir, "min.C_5"))
-} else {
-  cat("directory exists!")
-}
-
-for (i in 1:length(chrfiles)) {
-  fasta <-readDNAStringSet(chrfiles[i])
-  chr <- gsub(".*chromosome.|\\.fa.gz$", "", basename(chrfiles[i]))
-  cat(paste0("Running for chr:", chr,"\n"), sep = "")
-  
-  # extract cytosines from Fasta
-  system.time(
-    CfromFASTAv4(fasta = fasta, 
-                 chr=chr,
-                 out.dir=paste0(out.dir,"min.C_5/"), 
-                 write.output=TRUE
-    ))
-  
-  # Calling regions; calls the file created by CfromFASTAv4 
-  ref.genome <- fread(paste0(out.dir, "min.C_5/cytosine_positions_chr", chr, ".csv", sep=""))
-  
-  system.time(
-    makeReg(ref.genome = ref.genome, 
-            contexts = contexts, 
-            makeRegnull = makeNull, 
-            chr = chr, 
-            min.C = min.C, 
-            N.boot=10^5, 
-            N.sim.C = "all", 
-            fp.rate=fp.rate, 
-            set.tol=0.01, 
-            out.dir=paste0(out.dir,"min.C_5/"),
-            out.name=out.name
-    ))
-}
-
-```
-## Output files
-
-*Output file "Arabidopsis_regions_chr1_CG.Rdata" is a Rdata file which has the following structure.*
-
-```{r eval=TRUE, include=FALSE}
-regionfile <- dget(system.file("extdata","min.C_5/fp0.01/Arabidopsis_regions_chr1_CG.Rdata", package="jDMR"))
-```
-
-```{r}
-head(regionfile$reg.obs)
-```
-
-\section{Generation of Cytosine region-level calls}
-
-## Input files
+\section{Input files}
 
 For generation of region-level calls, jDMR requires the following inputs.
 
-### Methimpute files: 
+## Methimpute files: 
 
-Full PATH of base-level methylome outputs (generated using the R package "Methimpute") should be specified in the file "listFiles1.fn". A column called "sample" should contain any assigned name.
+Base-level methylome outputs (generated using the R package "Methimpute") 
+
+## A metadata file containing description about samples
+For population data-sets without replicates, listfiles.fn should have the structure below.
+
+\setlength{\leftskip}{1cm}
+
+**file**: full PATH of file.
+
+**sample**: a sample name
+
+\setlength{\leftskip}{0pt}
 
 ```{r}
 samplefile1 <- system.file("extdata", "listFiles1.fn", package="jDMR")
 fread(samplefile1, header = TRUE)
 ```
 
-\setlength{\leftskip}{1cm}
-
-**file**: full PATH of file
-
-**sample**: a sample name
-
-\setlength{\leftskip}{0pt}
-
 For pairwise control-treatment data-sets with replicates, an additional column "replicate" should be provided. See structure below.
-
-```{r}
-samplefile2 <- system.file("extdata", "listFiles2.fn", package="jDMR")
-fread(samplefile2, header = TRUE)
-```
 
 \setlength{\leftskip}{1cm}
 
@@ -211,67 +74,82 @@ fread(samplefile2, header = TRUE)
 
 \setlength{\leftskip}{0pt}
 
-### Cytosine region files (Optional, only if you will run "runMethimputeRegions") : 
-
-These files containing cytosine clusters were generated using the function "makeReg". See section 1.1
 ```{r}
-Regionsfolder <- system.file("extdata","min.C_5/fp0.01", package="jDMR")
+samplefile2 <- system.file("extdata", "listFiles2.fn", package="jDMR")
+fread(samplefile2, header = TRUE)
 ```
 
 
-## Run Methimpute for cytosine regions
-
-Run function "runMethimputeRegions" on identified cytosine clusters.
-
-```{r eval=FALSE, include=TRUE}
-
-runMethimputeRegions(Regionfiles=Regionsfolder,
-                     samplefiles=samplefile1,
-                     genome="Arabidopsis",
-                     context=c("CG","CHG","CHH"),
-                     out.dir=out.dir)
-
-```
-
-## Run Methimpute on a binned genome. 
-
-For a non-sliding window approach use window size=100 and step size=100. 
-    Useful for a) mSFS(maybe) b) region-level epimutation estimations
-
-For a sliding-window approach use window size=100 and step size=50. 
-    Useful for a) meQTL mapping b) DMR calling across treatments c) DMRs in populations
-
-```{r eval=FALSE, include=TRUE}
-
-fasta.files <- system.file("extdata", package="jDMR")
-
-runMethimputeGrid(fasta=fasta.files,
-                  samplefiles=samplefile1,
-                  genome="Arabidopsis",
-                  context=c("CG"),
-                  out.dir=out.dir,
-                  win=100,
-                  step=100,
-                  mincov=0,
-                  nCytosines=5)
-```
-
-## Output files
-
-*"region-level methylome files" have the following structure*
 
 ```{r eval=TRUE, include=FALSE}
-region.file <- fread("/Users/rashmi/basedir/jDMR-test/sample/GSM2328622.txt_CG.txt", header = TRUE) 
+#out.dir <- paste0("/myfolder/results/", Sys.getenv("LOGNAME"),"/")
+out.dir <- "/Users/rashmi/basedir/jDMR-test/"
+```
 
+
+\section{Generate cytosine region calls from genome}
+
+jDMR detects DMRs using two approaches a) finding cytosine clusters in the genome (section 2.1) b) using a binning approach (section 2.2). You can use either of the methods to obtain the region calls. The remaining steps, makeDMRmatrix, filterDMRmatrix annotateDMRs are the same for both methods.
+
+## Run jDMR on cytosine clusters extracted from genome
+
+\setlength{\leftskip}{1cm}
+
+**fasta.file**: PATH to FASTA file
+
+**samplefiles**: PATH to file containing description about the samples
+
+**genome**: a string containing name of the genome
+
+**out.dir**: PATH to output directory
+
+**contexts**: sequence contexts of the cytosine. By default this option is set to c("CG", "CHG", "CHH"). If you want to run for a single context such as CG, set it as "CG".
+
+\setlength{\leftskip}{0pt}
+
+```{r results='hide', message=FALSE, warning=FALSE}
+library(jDMR)
+```
+
+```{r eval=FALSE, include=TRUE}
+
+out.dir <- "/myfolder/DMR-results"
+myfasta <- system.file("extdata","TAIR10_chr_all.fa", package="jDMR")
+samplefile <- system.file("extdata","listFiles1.fn", package="jDMR")
+
+runjDMRregions(fasta.file=myfasta,
+                     samplefiles=samplefile,
+                     genome="Arabidopsis",
+                     out.dir=out.dir)
+```
+
+### Output files of jDMR Regions approach
+
+Rdata files containing coordinates of Cytosine clusters will be generated for each chromosome and cytosine context.
+
+*Output file "Arabidopsis_regions_chr1_CG.Rdata" contains coordinates of cytosine clusters*
+
+```{r eval=TRUE, include=TRUE}
+regionfile <- dget(system.file("extdata","min.C_5/fp0.01/Arabidopsis_regions_chr1_CG.Rdata", package="jDMR"))
 ```
 
 ```{r}
-head(region.file)
+head(regionfile$reg.obs)
+```
+
+Region files containing state calls and methylation levels will be generated for each sample and each cytosine context.
+
+```{r eval=TRUE, include=FALSE}
+jDMR.out <- fread("/Users/rashmi/basedir/jDMR-test/merged-WT_CG.txt", header = TRUE) 
+```
+
+```{r echo=FALSE}
+head(jDMR.out)
 ```
 
 \setlength{\leftskip}{1cm}
 
-**seqnames, start and strand**: Chromosome coordinates
+**seqnames, start and end**: Chromosome coordinates
 
 **context**: Sequence context of cytosine i.e CG,CHG,CHH
 
@@ -281,76 +159,182 @@ head(region.file)
 
 **rc.meth.lvl**: Recalibrated methylation level calculated from the posteriors and fitted parameters
 
+\setlength{\leftskip}{0pt}
+
+## Run jDMR on a binned genome
+
+A non-sliding window approach will be used to bin the genome. The bin and step size will be determined automatically using the min.C parameter. 
+
+\setlength{\leftskip}{1cm}
+**fasta.file**: PATH to FASTA file
+
+**samplefiles**: PATH to file containing description about the samples
+
+**genome**: a string containing name of the genome
+
+**out.dir**: PATH to output directory
+
+**contexts**: sequence contexts of the cytosine. By default this option is set to c("CG", "CHG", "CHH"). If you want to run for a single context such as CG, set it as "CG".
+
+**min.C**: minimum number of cytosines in a bin. bins lower than specified theshold will be dropped.
 
 \setlength{\leftskip}{0pt}
+
+```{r eval=FALSE, include=TRUE}
+
+out.dir <- "/myfolder/DMR-results"
+myfasta <- system.file("extdata","TAIR10_chr_all.fa", package="jDMR")
+samplefile <- system.file("extdata","listFiles1.fn", package="jDMR")
+
+runjDMRgrid(out.dir=out.dir,
+                  fasta.file=myfasta,
+                  samplefiles=samplefile,
+                  min.C=10,
+                  genome="Arabidopsis")
+```
+
+### Output files of jDMR Grid approach
+
+Region files containing state calls and methylation levels will be generated for each sample and for each context.
+
+```{r eval=TRUE, include=FALSE}
+jDMR.out <- fread("/Users/rashmi/basedir/jDMR-test/results/merged-WT_CG.txt", header = TRUE) 
+```
+
+```{r echo=FALSE}
+head(jDMR.out)
+```
+
+\setlength{\leftskip}{1cm}
+
+**seqnames, start and end**: Chromosome coordinates
+
+**context**: Sequence context of cytosine i.e CG,CHG,CHH
+
+**posteriorMax**: Posterior value of the methylation state call
+
+**status** : Methylation status
+
+**rc.meth.lvl**: Recalibrated methylation level calculated from the posteriors and fitted parameters
+
+\setlength{\leftskip}{0pt}
+
 
 \section{Generate DMR matrix}
 
 ## Run "makeDMRmatrix"
 
-"makeDMRmatrix" function generates 1) binary matrix (0,1) and 2) matrix of rc.meth.lvls for all samples in one dataframe.
+\setlength{\leftskip}{1cm}
+"makeDMRmatrix" function generates matrix of state calls, rc.meth.lvls  and posterior probabilities for all samples in one dataframe.
+
+**samplefiles**: PATH to file containing description about the samples
+
+**input.dir**: PATH to directory containing region files.
+
+**out.dir**: PATH to output directory.
+
+**contexts**: sequence contexts of the cytosine. By default this option is set to c("CG", "CHG", "CHH"). If you want to run for a single context such as CG, set it as "CG".
+
+\setlength{\leftskip}{0pt}
 
 ```{r eval=FALSE, include=TRUE}
 
-makeDMRmatrix(context=c("CG","CHG","CHH"),
-              samplefiles=samplefile1,
-              input.dir=out.dir,
-              out.dir=out.dir
-              )
+input.dir <- "/myfolder/DMR-results"
+out.dir <- "/myfolder/DMRmatrix-results"
+samplefile <- system.file("extdata","listFiles1.fn", package="jDMR")
+
+makeDMRmatrix(samplefiles=samplefile,
+              input.dir=myinput,
+              out.dir=out.dir)
+
 ```
 
-
-## Output files
+## Output files of DMRmatrix function
 
 *"CG_StateCalls.txt" has the following structure. "0" in the output matrix denotes "Unmethylated" and "1" stands for "Methylated".*
 
-```{r}
+```{r eval=TRUE, include=FALSE}
+out.dir <- "/Users/rashmi/basedir/jDMR-test/results/"
+```
+
+```{r eval=TRUE, include=TRUE}
 statecalls <- fread(paste0(out.dir, "CG_StateCalls.txt" , sep=""), header=TRUE)
 head(statecalls)
 ```
 
 *"CG_rcMethlvl.txt" has the following structure. The output matrix contains recalibrated methylation levels for each sample and for the specific region.*
 
-```{r}
+```{r eval=TRUE, include=TRUE}
 rcmethlvls <- fread(paste0(out.dir, "CG_rcMethlvl.txt" , sep=""), header=TRUE)
 head(rcmethlvls)
+```
+
+*"CG_postMax.txt" has the following structure. The output matrix contains posterior probabilities for each sample and for the specific region.*
+
+```{r eval=TRUE, include=TRUE}
+postMax <- fread(paste0(out.dir, "CG_postMax.txt" , sep=""), header=TRUE)
+head(postMax)
 ```
 
 \section{Filter DMR matrix}
 
 ## Filter the DMR matrix with the following options
 
-"filterDMRmatrix" function filters "CG_StateCalls.txt" and "CG_rcMethlvl.txt" for non-polymorphic patterns by default.
+This function filters the DMR matrix for non-polymorphic patterns.
 
-\textit{epiMAF.cutoff} parameter can be used for population level data. This option can be used to filter for Minor Epi-Allele frequency as specified by user (e.g 0.33). By default, this option is set to NULL.
+\setlength{\leftskip}{1cm}
+                            
+**gridDMR**: set this option to TRUE if Grid approach was used otherwise set to FALSE. The output will contain merged regions.
 
-\textit{replicate.consensus} option can be used for pairwise control-treatment data-sets with replicates. With the \textit{replicate.consensus}, user can specify the percentage of concordance in methylation states in samples with multiple replicates. For datasets with just 2 replicates, \textit{replicate.consensus} should be set as 1 (means 100% concordance). By default, this option is set to NULL.
+**data.dir**: PATH to folder containing DMR matrix
 
-\textit{grid.DMR} if you used the grid approach to call DMRs set to TRUE otherwise set to FALSE. The output will contain merged regions.
+**epiMAF.cutoff**: Applicable for calling calling population DMRs. This option can be used to filter for Minor Epi-Allele frequency as specified by user. By default, this option is set to NULL. 
+
+**replicate.consensus** : Applicable for control-treatment data-sets with replicates. Users can specify the percentage of concordance in methylation states in samples with multiple replicates. For datasets with just 2 replicates, \textit{replicate.consensus} should be set as 1 (means 100% concordance). By default, this option is set to NULL.
+
+**rc.methlvl.out**: Output filtered matrix containing recalibrtated methylation levels. By default, this option is set to FALSE. 
+
+**context.specific.DMRs**: Output context specific DMRs i.e CG-only, CHG-only, CHH-only, non-CG and multi-context DMRs. By default, this option is set to TRUE.
+
+\setlength{\leftskip}{0pt}
+
 
 ```{r eval=FALSE, include=TRUE}
 
-## Please run filterDMRmatrix function based on the type of data you have.
-
-filterDMRmatrix(gridDMR=TRUE,
+out.dir <- "/myfolder/DMRmatrix-results"
+filterDMRmatrix(gridDMR=TRUE, #if region DMRs set to FALSE
                 data.dir=out.dir)
-#replicate.consensus=8
-#epiMAF.cutoff=0.33
+
 ```
 
 ## Filtered Output
 
 *"CG_StateCalls-filtered.txt" has the following structure.*
 
-```{r}
+```{r eval=TRUE, include=TRUE}
 statecallsFiltered <- fread(paste0(out.dir, "CG_StateCalls-filtered.txt" , sep=""), header=TRUE)
 head(statecallsFiltered)
 ```
 
+Additionally, the following files viz, CG-only-DMRs.txt, CHG-only-DMRs.txt, CHH-only-DMRs.txt, nonCG-DMRs.txt and multi-context-DMRs.txt will be generated.
+
 \section{Annotate DMRs}
 
-Multiple gff3 annotation files can be supplied as a vector with the \textit{gff} option. Single/multiple files containing filtered DMR matrix should be provided with the \textit{file.list} option. If you are following the grid approach then supply "CG_StateCalls-filtered-merged.txt"
+Multiple gff3 annotation files can be supplied as a vector with the \textit{gff} option. Single/multiple files containing filtered DMR matrix should be provided with the \textit{file.list} option.
 
+\setlength{\leftskip}{1cm}
+
+**gff.files**: Multiple gff3 annotation files can be supplied as a vector 
+
+**annotation**: specify annotation categories
+
+**input.dir**: path to folder containing only files to be annotated. Any file containing 3 columns (chr, start, stop) can be annotated using the annotateDMRs function.
+
+**gff3.out**: whether to output annotated files in gff3 format
+
+**out.dir**: path to output folder
+
+\setlength{\leftskip}{0pt}
 
 ```{r eval=FALSE, include=TRUE}
 
@@ -359,33 +343,27 @@ gff.AT <- "/Annotations/Arabidopsis_thaliana.TAIR10.47.gff3"
 gff.TE <- "/Annotations/TAIR10_TE.gff3"
 gff.pr <- "/Annotations/TAIR10_promoters.gff3"
 
-#Please supply the text files to be annotated in a separate folder. 
-#For e.g I make a new folder "mysamples". In the case of gridDMR supply the (*merged.txt) files by moving them to "mysamples" folder
-mydir <- paste0(out.dir, "mysamples")
-
-#you can specify the following available annotations. if you have your custom file let me know.
-#"chromosome","gene","mRNA","five_prime_UTR","exon","CDS",
-#"three_prime_UTR","ncRNA_gene","lnc_RNA","miRNA","tRNA","ncRNA",
-#"snoRNA","snRNA","rRNA","TE","promoters"
+mydir <- "/myfolder/annotate_DMRs/" 
 
 annotateDMRs(gff.files=c(gff.AT, gff.TE, gff.pr),
              annotation=c("gene","promoters","TE"),
-             input.dir=out.dir,
+             input.dir=mydir,
              gff3.out=TRUE,
-             out.dir=out.dir)
+             out.dir=mydir)
 ```
 
-## Output files
+## Output files after annotation
 
-Mapped files are output in gff3 format. Addiitonally, a DMR count table is generated. 
+Mapped files are output in .txt and/or .gff3 format. Addiitonally, a DMR count table is generated. 
 
-```{r}
-
-DMRcount <- fread(paste0(out.dir, "mysamples/DMR-counts.txt", sep = ""), header = TRUE)
-
-DMRcount
+```{r eval=TRUE, include=FALSE}
+out.dir <- "/Users/rashmi/basedir/jDMR-test/results/"
 ```
 
+```{r eval=TRUE, include=TRUE}
+DMRcounts <- fread(paste0(out.dir, "annotate_DMRs/DMR-counts.txt" , sep=""), header=TRUE)
+DMRcounts
+```
 
 \section{R session info }
 

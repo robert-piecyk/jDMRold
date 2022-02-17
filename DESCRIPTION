@@ -1,6 +1,6 @@
 Package: jDMR
 Type: Package
-Title: A heuristic DMR caller for population-level WGBS data
+Title: A heuristic DMR caller for large-scale WGBS data
 Version: 0.1.0
 Author: Rashmi Hazarika - rashmi.hazarika@tum.de, Yadi Shahryary - y.shahryary@tum.de, rank Johannes - frank@johanneslab.org
 Maintainer: The package maintainer <yourself@somewhere.net>
