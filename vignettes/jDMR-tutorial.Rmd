@@ -355,7 +355,7 @@ head(statecallsFiltered)
 If "rc.methlvl.out" option is set to TRUE a filtered matrix with averaged methylation levels in generated.
 ```{r eval=TRUE, include=TRUE}
 rcmethlvlFiltered <- fread(paste0(my.dir, "CG_WT_mutant1_rcmethlvl-filtered.txt" , sep=""), header=TRUE)
-head(statecallsFiltered)
+head(rcmethlvlFiltered)
 ```
 
 ## Output context specific DMRs
