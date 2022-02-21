@@ -36,6 +36,7 @@ knitr::opts_chunk$set(
 
 ```{r eval=TRUE, include=FALSE}
 library(data.table)
+library(jDMR)
 ```
 
 \section{Input files}
