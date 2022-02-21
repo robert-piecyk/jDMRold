@@ -16,7 +16,7 @@ To install from GitHub (development version), follow the steps given below.
 
 ------------------------------------------------------------------------
 
-### How to use jDMR
+### How to use AlphaBeta
 
 Please open the [vignette](https://github.com/jlab-code/jDMR/blob/master/vignettes/jDMR-tutorial.pdf) file.
 
