@@ -374,7 +374,7 @@ context.specific.DMRs(samplefiles=samplefile,
 
 \section{Annotate DMRs}
 
-This function annotates the lists of DMRs.
+This function annotates the lists of DMRs. Any file(.txt) containing 3 columns (chr, start, stop) can be annotated using the annotateDMRs function. Please move all files to be annotated to a separate folder and set the full PATH to the "input.dir" option.
 
 \setlength{\leftskip}{1cm}
 
@@ -389,6 +389,7 @@ This function annotates the lists of DMRs.
 **out.dir**: path to output folder
 
 \setlength{\leftskip}{0pt}
+In the following example, I will annotate the files generated in section 4.3
 
 ```{r eval=FALSE, include=TRUE}
 
