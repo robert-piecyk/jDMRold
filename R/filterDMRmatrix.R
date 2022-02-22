@@ -387,7 +387,7 @@ extract.context.DMRs <- function(file1, file2, file3, tmp.name, data.dir){
     CG.1$seqnames <- as.integer(as.character(CG.1$seqnames))
     CG.only <- CG.out %>% dplyr::semi_join(CG.1, by = c("seqnames","start","end"))
     DMR.list.out(context.df=CG.only,
-                 out.name=paste0(tmp.name,"_CG-only-DMRs"),
+                 out.name=paste0(tmp.name,"CG-only-DMRs"),
                  data.out=data.dir)
     message("Done!")
 
@@ -399,7 +399,7 @@ extract.context.DMRs <- function(file1, file2, file3, tmp.name, data.dir){
     CHG.1$seqnames <-as.integer(as.character(CHG.1$seqnames))
     CHG.only <- CHG.out %>% dplyr::semi_join(CHG.1, by = c("seqnames","start","end"))
     DMR.list.out(context.df=CHG.only,
-                 out.name=paste0(tmp.name,"_CHG-only-DMRs"),
+                 out.name=paste0(tmp.name,"CHG-only-DMRs"),
                  data.out=data.dir)
     message("Done!")
 
@@ -411,7 +411,7 @@ extract.context.DMRs <- function(file1, file2, file3, tmp.name, data.dir){
     CHH.1$seqnames <-as.integer(as.character(CHH.1$seqnames))
     CHH.only <- CHH.out %>% dplyr::semi_join(CHH.1, by = c("seqnames","start","end"))
     DMR.list.out(context.df=CHH.only,
-                 out.name=paste0(tmp.name, "_CHH-only-DMRs"),
+                 out.name=paste0(tmp.name, "CHH-only-DMRs"),
                  data.out=data.dir)
     message("Done!")
 
@@ -446,7 +446,7 @@ extract.context.DMRs <- function(file1, file2, file3, tmp.name, data.dir){
     }
     close(pb4)
     DMR.list.out(context.df=data.table::rbindlist(nonCG.collect),
-                 out.name=paste0(tmp.name,"_nonCG-DMRs"),
+                 out.name=paste0(tmp.name,"nonCG-DMRs"),
                  data.out=data.dir)
     message("Done!")
 
@@ -492,7 +492,7 @@ extract.context.DMRs <- function(file1, file2, file3, tmp.name, data.dir){
       f <- data.table::rbindlist(multi.context.collect)
 
       DMR.list.out(context.df=f,
-                   out.name=paste0(tmp.name, "_multi-context-DMRs"),
+                   out.name=paste0(tmp.name, "multi-context-DMRs"),
                    data.out=data.dir)
     } else {
       message("No multi-context DMRs found!")
@@ -523,7 +523,7 @@ context.specific.DMRs <- function(samplefiles, data.dir){
       extract.context.DMRs(file1=CG.f,
                            file2=CHG.f,
                            file3=CHH.f,
-                           tmp.name=paste0(gp1.sample, "_", gp2.sample),
+                           tmp.name=paste0(gp1.sample, "_", gp2.sample, "_"),
                            data.dir=data.dir)
     }
   } else {
@@ -531,6 +531,7 @@ context.specific.DMRs <- function(samplefiles, data.dir){
     output <- extract.context.DMRs(file1=paste0(data.dir,"CG_StateCalls-filtered.txt"),
                                    file2=paste0(data.dir,"CHG_StateCalls-filtered.txt"),
                                    file3=paste0(data.dir,"CHH_StateCalls-filtered.txt"),
+                                   tmp.name="",
                                    data.dir=data.dir)
   }
 }
