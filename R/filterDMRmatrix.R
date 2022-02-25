@@ -9,7 +9,8 @@
 #' @export
 #'
 
-filterReplicateConsensus <- function(status.collect, rc.methlevel.collect, replicate.consensus){
+
+filterReplicateConsensus <- function(status.collect, rc.methlevel.collect, replicate.consensus, diff.ct=0.5){
 
   if (!is.null(status.collect$epiMAF)){
     status.collect <- status.collect[,-c("epiMAF")]
@@ -26,8 +27,10 @@ filterReplicateConsensus <- function(status.collect, rc.methlevel.collect, repli
     mypattern <- unlist(status.collect[x, 4:NCOL(status.collect)])
     df.bind <- cbind(sampleinfo, mypattern)
     for (m in unique(df.bind$sample)){
-      rval <- round(replicate.consensus * length(df.bind$mypattern[df.bind$sample==m]))
+      total.reps <- length(df.bind$mypattern[df.bind$sample==m])
+      rval <- round(replicate.consensus * total.reps)
       pattern.vals <- df.bind$mypattern[df.bind$sample==m]
+      df.bind$diff.count[df.bind$sample==m] <- length(which(pattern.vals==1))/total.reps
       tt <- table(pattern.vals)
       if (max(tt) >= rval){
         df.bind$count[df.bind$sample==m] <- 0
@@ -38,16 +41,26 @@ filterReplicateConsensus <- function(status.collect, rc.methlevel.collect, repli
     Sys.sleep(1/NROW(status.collect))
     setTxtProgressBar(pb1, x)
     close(pb1)
-    #print(df.bind)
-    if (sum(df.bind$count)==0) {
+
+    df.gp <- group_by(df.bind, sample) %>% summarize(n = mean(diff.count))
+    cb <- combn(df.gp$n,2)
+    my.diff <- unlist(lapply(cb, function(x) abs(cb[1]-cb[2])))
+
+    # allowing 50% difference between control and treatment groups
+    if ((min(my.diff) >= diff.ct) && (sum(df.bind$count)==0)) {
       dt <- rbind(dt, status.collect[x,])
     }
+    #print(df.bind)
+    #if (sum(df.bind$count)==0) {
+    #  dt <- rbind(dt, status.collect[x,])
+    #}
   })
   out <- q[!sapply(q,is.null)]
   #status.collect <- q[-which(sapply(q, is.null))]
   df.status.collect <- rbindlist(out)
   if (NROW(df.status.collect) !=0){
-    df.rc.methlevel.collect <- rc.methlevel.collect %>% dplyr::semi_join(df.status.collect, by=c("seqnames","start","end"))
+    df.rc.methlevel.collect <- rc.methlevel.collect %>% dplyr::semi_join(df.status.collect,
+                                                                         by=c("seqnames","start","end"))
     return(list(df.status.collect, df.rc.methlevel.collect))
   } else {
     message("\nEmpty dataframe. Nothing to write!")
