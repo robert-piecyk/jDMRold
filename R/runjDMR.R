@@ -100,9 +100,9 @@ runjDMRregions <- function(out.dir,
 }
 
 #-----------------------------------------------------------------------------------------
-export.bins <- function(mylist, mybin, out.dir, genome){
+export.bins <- function(mylist, bin.context, mybin, out.dir, genome){
   names(mylist) <- "reg.obs"
-  out.name <- paste0(out.dir, "/", genome,"_Win", mybin, "_Step", mybin, ".Rdata", sep="")
+  out.name <- paste0(out.dir, "/", genome,"_Win", mybin, "_Step", mybin, "_", bin.context, ".Rdata", sep="")
   dput(mylist, out.name)
 }
 
@@ -113,6 +113,8 @@ binGenome <- function(fasta.file,
                       min.C,
                       out.dir,
                       genome){
+
+
   cyt.collect <- list()
 
   # all cytosine positions
@@ -181,30 +183,50 @@ binGenome <- function(fasta.file,
   if ("CG" %in% colnames(out)){
     out.CG <- out[out$CG>=0.9]$bin.size
     min.CG <- min(out.CG)
-  } else { min.CG=NULL }
+  } else {
+    min.CG=NULL
+  }
 
   if ("CHG" %in% colnames(out)){
     out.CHG <- out[out$CHG>=0.9]$bin.size
     min.CHG <- min(out.CHG)
-  } else { min.CHG=NULL }
+  } else {
+    min.CHG=NULL
+  }
 
   if ("CHH" %in% colnames(out)){
     out.CHH <- out[out$CHH>=0.9]$bin.size
     min.CHH <- min(out.CHH)
-  } else { min.CHH=NULL }
-  mybins <- unique(c(min.CG, min.CHG, min.CHH))
+  } else {
+    min.CHH=NULL
+  }
+
+  mybins <- c(CG=min.CG, CHG=min.CHG, CHH=min.CHH)
 
   cat("----------------------------------------------------------------", "\n")
   cat("Exporting regions ....","\n")
   for (xx in seq_along(mybins)){
     export.df <- collect.bins[which(names(collect.bins)==mybins[[xx]])]
-    export.bins(mylist=export.df, mybin=mybins[[xx]], out.dir, genome)
+    export.bins(mylist=export.df, bin.context=names(mybins)[[xx]], mybin=mybins[[xx]], out.dir, genome)
   }
-  return(list(CG=min.CG,
-              CHG=min.CHG,
-              CHH=min.CHH))
+  # return(list(CG=min.CG,
+  #             CHG=min.CHG,
+  #             CHH=min.CHH))
+  return(list.files(out.dir, pattern=paste0(".*",genome,".*\\.Rdata$"), full.names=TRUE))
   cat("done!", "\n")
+
+  # cat("----------------------------------------------------------------", "\n")
+  # cat("Exporting regions ....","\n")
+  # for (xx in seq_along(mybins)){
+  #   export.df <- collect.bins[which(names(collect.bins)==mybins[[xx]])]
+  #   export.bins(mylist=export.df, mybin=mybins[[xx]], out.dir, genome)
+  # }
+  # return(list(CG=min.CG,
+  #             CHG=min.CHG,
+  #             CHH=min.CHH))
+  # cat("done!", "\n")
 }
+
 
 #-----------------------------------------------------------------------------------------
 #' Run jDMR on binned genome
@@ -225,29 +247,49 @@ binGenome <- function(fasta.file,
 #' @export
 #'
 runjDMRgrid <- function(out.dir,
-                              fasta.file,
-                              samplefiles,
-                              min.C,
-                              sliding.window=FALSE,
-                              genome,
-                              contexts=c('CG','CHG','CHH'),
-                              mincov=0,
-                              include.intermediate=FALSE,
-                              nCytosines=0){
-  bin.select <- binGenome(fasta.file,
-                          s.window=sliding.window,
-                          win=c(100,200,300,400,500,600,700,800,900,1000),
-                          contexts=contexts,
-                          min.C,
-                          out.dir,
-                          genome)
+                        fasta.file,
+                        samplefiles,
+                        min.C,
+                        sliding.window=FALSE,
+                        genome,
+                        contexts=c('CG','CHG','CHH'),
+                        mincov=0,
+                        include.intermediate=FALSE,
+                        nCytosines=0){
 
+  #bin.genome.files <- unlist(lapply(contexts, function(g) list.files(out.dir, paste0(g,".Rdata"), full.names=TRUE)))
+  bin.genome.files <- list.files(out.dir, pattern=paste0(".*",genome,".*\\.Rdata$"), full.names=TRUE)
+  if (length(bin.genome.files) == 0) {
+    cat("binned genome files donot exist. Creating for the first time...")
+    cat("\n")
+    bin.genome.files <- binGenome(fasta.file,
+                                  s.window=sliding.window,
+                                  win=c(100,200,300,400,500,600,700,800,900,1000),
+                                  contexts=contexts,
+                                  min.C,
+                                  out.dir,
+                                  genome)
+  } else {
+    cat(paste0("\nbinned genome files ", bin.genome.files, " exist!\n"))
+    cat("\n")
+  }
+  bin.select <- list()
+  for (x in 1:length(contexts)){
+    b <- bin.genome.files[grep(contexts[x], bin.genome.files)]
+    if ((length(b)) != 0) {
+      bin.select[[x]] <- b
+      names(bin.select)[[x]] <- contexts[x]
+    }
+  }
   merge.list <- vector(mode="list")
   filelist <- data.table::fread(samplefiles, header=TRUE)
   for (j in seq_along(bin.select)){
-    cat(paste0("Win ", bin.select[[j]], " Step ", bin.select[[j]], " context ", names(bin.select)[j],  "\n"))
-    refRegion.name <- paste0(out.dir, "/", genome, "_Win", bin.select[[j]], "_Step",bin.select[[j]],".Rdata",sep="")
-    refRegion <- dget(refRegion.name)
+    #cat(paste0("Win ", bin.select[[j]], " Step ", bin.select[[j]], " context ", names(bin.select)[j],  "\n"))
+    #cat(bin.select[[j]])
+    # refRegion.name <- paste0(out.dir, "/", genome, "_Win", bin.select[[j]],
+    #                          "_Step", bin.select[[j]], "_", names(bin.select)[j], ".Rdata", sep="")
+
+    refRegion <- dget(bin.select[[j]])
     for (i in seq_along(filelist$file)){
       methfn <- gsub(".*methylome_|\\.txt|_All.txt$", "", filelist$file[i])
       cat("----------------------------------------------------------------", "\n")
@@ -260,7 +302,7 @@ runjDMRgrid <- function(out.dir,
         include.intermediate=include.intermediate,
         probability="constrained",
         out.dir=out.dir,
-        fit.name=paste0(methfn, "_", bin.select[j]),
+        fit.name=paste0(methfn, "_", names(bin.select)[j]),
         name=methfn,
         nCytosines=nCytosines,
         mincov=mincov)
