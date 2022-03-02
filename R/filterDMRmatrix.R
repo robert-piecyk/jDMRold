@@ -136,7 +136,7 @@ merge.bins <- function(rcmethlvl, statecalls, rc.methlvl.out){
   gr1 <- GRanges(seqnames=matrix1$seqnames, ranges=IRanges(start=matrix1$start, end=matrix1$end))
   values(gr1) <- cbind(values(gr1), pattern=apply(matrix1[,c(4:NCOL(matrix1))], 1, paste, collapse=""))
 
-  message("Now, Merging overlapping and consecutive bins...\n")
+  message("\nNow, Merging overlapping and consecutive bins...\n")
 
   # this is for the state-calls: collapse overlapping bins if pattern is same
   grl_reduce <- unlist(GenomicRanges::reduce(split(gr1, gr1$pattern)))
@@ -193,10 +193,12 @@ merge.bins <- function(rcmethlvl, statecalls, rc.methlvl.out){
 
 export.out <- function(out.rcmethlvl, out.statecalls, context, out.name1, out.name2, data.out){
   fwrite(x=out.statecalls,
-         file=paste0(data.out, "/", context, "_", out.name1, ".txt"), quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
+         file=paste0(data.out, "/", context, "_", out.name1, ".txt"),
+         quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
   if (!is.null(out.rcmethlvl)) {
     fwrite(x=out.rcmethlvl,
-           file=paste0(data.out, "/", context, "_", out.name2, ".txt"), quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
+           file=paste0(data.out, "/", context, "_", out.name2, ".txt"),
+           quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
   } else {
     message("Generate filtered matrix of recalibrated methylation levels set to FALSE!")
     message("------------------------------------------------------", "\n")
@@ -220,18 +222,48 @@ filterDMRmatrix <- function(epiMAF.cutoff=NULL,
                             replicate.consensus=NULL,
                             gridDMR=TRUE,
                             data.dir,
-                            rc.methlvl.out=FALSE) {
+                            rc.methlvl.out=FALSE,
+                            samplefiles,
+                            contexts=c("CG","CHG","CHH")) {
 
-  list.status <- list.files(data.dir, pattern="_StateCalls.txt", full.names=TRUE)
+  ft <- fread(samplefiles)
+  if (!is.null(ft$group)){
+    ft$name <- paste0(ft$sample,"_", ft$replicate)
+    gps <- ft$group[!ft$group %in% c('control')]
+    gps <- unique(gps)
+    list.collect1 <- list()
+    list.collect2 <- list()
+    for (m in seq_along(gps)){
+      myvec <- c("control", gps[m])
+      gp1 <- ft$name[which(ft$group==myvec[1])]
+      gp2 <- ft$name[which(ft$group==myvec[2])]
+      gp1.sample <- unique(ft$sample[which(ft$name==gp1)])
+      gp2.sample <- unique(ft$sample[which(ft$name==gp2)])
+      out.name <- paste0(gp1.sample, "_", gp2.sample)
+      for (cn in seq_along(contexts)){
+        fn1 <- paste0(data.dir, contexts[cn],"_", out.name ,"_StateCalls.txt")
+        list.collect1[[cn]] <- fn1
+      }
+      list.collect2[[m]] <- list.collect1
+    }
+    list.status <- unlist(list.collect2)
+  } else {
+    list.status <- list.files(data.dir, pattern="_StateCalls.txt", full.names=TRUE)
+  }
   if (length(list.status) != 0){
     for (i in seq_along(list.status)){
       context <- gsub("_StateCalls.txt", "", basename(list.status[i]))
-      message("\nRunning DMR matrix for ", context)
+      message("\nFiltering DMR matrix for ", context)
 
       #----------------------------------------------
       # Removing non-polymorphic/unchanged patterns
       #----------------------------------------------
-      status.collect <- fread(list.status[i], header=T)
+      if (file.exists(list.status[i])){
+        status.collect  <- fread(list.status[i], header=T)
+      } else {
+        stop("Files donot exist or is non-readable!")
+      }
+
       message("Removing non-polymorphic patterns...")
 
       index <- which(rowSums(status.collect[,4:NCOL(status.collect)]) != 0 &
@@ -302,7 +334,7 @@ filterDMRmatrix <- function(epiMAF.cutoff=NULL,
           message("Both, epiMAF and replicate consensus set to NULL")
           out1=status.collect
           if (rc.methlvl.out==TRUE){
-          out2=rc.methlevel.collect
+            out2=rc.methlevel.collect
           } else {
             out2 <- NULL
           }
