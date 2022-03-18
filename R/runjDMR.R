@@ -43,13 +43,13 @@ extractCytclusters <- function(in.fasta, contexts, genome, out.dir){
 #' @export
 #'
 runjDMRregions <- function(out.dir,
-                                 fasta.file,
-                                 samplefiles,
-                                 genome,
-                                 contexts=c('CG','CHG','CHH'),
-                                 include.intermediate=FALSE,
-                                 mincov=0,
-                                 nCytosines=0) {
+                           fasta.file,
+                           samplefiles,
+                           genome,
+                           contexts=c('CG','CHG','CHH'),
+                           include.intermediate=FALSE,
+                           mincov=0,
+                           nCytosines=0) {
   Regionfiles <- extractCytclusters(in.fasta=fasta.file, contexts, genome, out.dir=out.dir)
   df.obs <- list()
   df.sim <- list()
@@ -72,26 +72,26 @@ runjDMRregions <- function(out.dir,
       }
     }
     refRegion <- list(reg.obs=do.call(rbind,df.obs),
-                    reg.sim=do.call(rbind,df.sim),
-                    context=contexts[j])
+                      reg.sim=do.call(rbind,df.sim),
+                      context=contexts[j])
     #print(refRegion)
 
     for (k2 in seq_along(filelist$file)){
       if (file.exists(filelist$file[k2])==TRUE){
-      methfn <- gsub(".*methylome_|\\.txt|_All.txt$", "", filelist$file[k2])
-      cat(paste0("Now running file: ", methfn, " for context ", contexts[j], " ...\n"), sep="")
-      regions.out <- makeMethimpute(
-        df=filelist$file[k2],
-        context=contexts[j],
-        refRegion=refRegion,
-        fit.plot=FALSE,
-        include.intermediate=include.intermediate,
-        probability="constrained",
-        out.dir=out.dir,
-        fit.name=paste0(methfn, "_", contexts[j]),
-        name=methfn,
-        nCytosines=nCytosines,
-        mincov=mincov)
+        methfn <- gsub(".*methylome_|\\.txt|_All.txt$", "", filelist$file[k2])
+        cat(paste0("Now running file: ", methfn, " for context ", contexts[j], " ...\n"), sep="")
+        regions.out <- makeMethimpute(
+          df=filelist$file[k2],
+          context=contexts[j],
+          refRegion=refRegion,
+          fit.plot=FALSE,
+          include.intermediate=include.intermediate,
+          probability="constrained",
+          out.dir=out.dir,
+          fit.name=paste0(methfn, "_", contexts[j]),
+          name=methfn,
+          nCytosines=nCytosines,
+          mincov=mincov)
       } else {
         stop("Check filenames! ", filelist$file[k2], " doesnot exist.\n")
       }
@@ -100,9 +100,9 @@ runjDMRregions <- function(out.dir,
 }
 
 #-----------------------------------------------------------------------------------------
-export.bins <- function(mylist, bin.context, mybin, out.dir, genome){
+export.bins <- function(mylist, bin.context, mybin, step, out.dir, genome){
   names(mylist) <- "reg.obs"
-  out.name <- paste0(out.dir, "/", genome,"_Win", mybin, "_Step", mybin, "_", bin.context, ".Rdata", sep="")
+  out.name <- paste0(out.dir, "/", genome,"_Win", mybin, "_Step", step, "_", bin.context, ".Rdata", sep="")
   dput(mylist, out.name)
 }
 
@@ -135,14 +135,96 @@ binGenome <- function(fasta.file,
 
   mydf.collect <- list()
   collect.bins <- list()
-  for (x1 in seq_along(win)){
+
+  mybins <- c()
+  if (length(win)>1){
+    for (x1 in seq_along(win)){
+      cat("-------------------------", "\n")
+      if (s.window==TRUE){
+        step.size <- win[x1]/2
+        binned.g <- slidingWindows(gr, width = win[x1], step = step.size)
+        cat(paste0("Binning genome with windows of: ", win[x1], " bp and step-size of: ", step.size, " bp\n"), sep = "")
+      } else {
+        step.size <- win[x1]
+        binned.g <- slidingWindows(gr, width = win[x1], step = step.size)
+        cat(paste0("Binning genome with windows of: ", win[x1], " bp and step-size of: ", step.size, " bp\n"), sep = "")
+      }
+      dd <- data.frame(unlist(binned.g))
+      names(dd)[1] <- "chr"
+      names(dd)[2] <- "start"
+      names(dd)[3] <- "end"
+      names(dd)[4] <- "cluster.length"
+
+      new <- list(dd)
+      names(new) <- as.numeric(as.character(win[x1]))
+      #names(new) <- "reg.obs"
+      collect.bins <- append(collect.bins, new)
+      #dput(new, out.name)
+
+      # tmp_reg <- new
+      # data <- as.data.frame(tmp_reg$reg.obs)
+      data_gr <- GRanges(seqnames=dd$chr,
+                         ranges=IRanges(start=dd$start, end=dd$end),
+                         clusterlen=dd$cluster.length)
+
+      mydf <- data.frame(bin.size=win[x1])
+
+      for (cx in seq_along(contexts)){
+        cat("Extracting cytosines for ", contexts[cx], "\n")
+        ref_gr <- cyt_gr[which(cyt_gr$context==contexts[cx]),]
+        data_gr$cytosineCount <- GenomicRanges::countOverlaps(data_gr, ref_gr)
+        dat.collect <- data_gr$cytosineCount
+
+        new.dat.collect <- length(which(dat.collect>=min.C))
+        non.empty.bins <- new.dat.collect/length(dat.collect)
+        mydf[,ncol(mydf) + 1] <- non.empty.bins
+        colnames(mydf)[ncol(mydf)] <- paste0(contexts[cx])
+        rm(dat.collect, new.dat.collect)
+      }
+      mydf.collect[[x1]] <- mydf
+    }
+    out <- rbindlist(mydf.collect)
+
+    if ("CG" %in% colnames(out)){
+      out.CG <- out[out$CG>=0.9]$bin.size
+      min.CG <- min(out.CG)
+    } else {
+      min.CG=NULL
+    }
+
+    if ("CHG" %in% colnames(out)){
+      out.CHG <- out[out$CHG>=0.9]$bin.size
+      min.CHG <- min(out.CHG)
+    } else {
+      min.CHG=NULL
+    }
+
+    if ("CHH" %in% colnames(out)){
+      out.CHH <- out[out$CHH>=0.9]$bin.size
+      min.CHH <- min(out.CHH)
+    } else {
+      min.CHH=NULL
+    }
+    mybins <- c(CG=min.CG, CHG=min.CHG, CHH=min.CHH)
+
+    cat("----------------------------------------------------------------", "\n")
+    cat("Exporting regions ....","\n")
+    for (xx in seq_along(mybins)){
+      export.df <- collect.bins[which(names(collect.bins)==mybins[[xx]])]
+      export.bins(mylist=export.df, bin.context=names(mybins)[[xx]], mybin=mybins[[xx]], step=step.size, out.dir, genome)
+    }
+    return(list.files(out.dir, pattern=paste0(".*",genome,".*\\.Rdata$"), full.names=TRUE))
+    cat("done!", "\n")
+  } else {
     cat("-------------------------", "\n")
     if (s.window==TRUE){
-      binned.g <- slidingWindows(gr, width = win[x1], step = win[x1]/2)
-      cat(paste0("Binning genome with windows of: ", win[x1], " bp and step-size of: ", win[x1]/2, " bp\n"), sep = "")
+      step.size <- win/2
+      binned.g <- slidingWindows(gr, width = win, step = step.size)
+      cat(paste0("Binning genome with windows of: ", win, " bp and step-size of: ", step.size, " bp\n"), sep = "")
     } else {
-      binned.g <- slidingWindows(gr, width = win[x1], step = win[x1])
-      cat(paste0("Binning genome with windows of: ", win[x1], " bp and step-size of: ", win[x1], " bp\n"), sep = "")
+      step.size <- win
+      binned.g <- slidingWindows(gr, width = win, step = step.size)
+      cat(paste0("Binning genome with windows of: ", win, " bp and step-size of: ", step.size, " bp\n"), sep = "")
     }
     dd <- data.frame(unlist(binned.g))
     names(dd)[1] <- "chr"
@@ -151,70 +233,24 @@ binGenome <- function(fasta.file,
     names(dd)[4] <- "cluster.length"
 
     new <- list(dd)
-    names(new) <- as.numeric(as.character(win[x1]))
+    names(new) <- as.numeric(as.character(win))
     #names(new) <- "reg.obs"
     collect.bins <- append(collect.bins, new)
-    #dput(new, out.name)
-
-    # tmp_reg <- new
-    # data <- as.data.frame(tmp_reg$reg.obs)
-    data_gr <- GRanges(seqnames=dd$chr,
-                       ranges=IRanges(start=dd$start, end=dd$end),
-                       clusterlen=dd$cluster.length)
-
-    mydf <- data.frame(bin.size=win[x1])
-
     for (cx in seq_along(contexts)){
       cat("Extracting cytosines for ", contexts[cx], "\n")
-      ref_gr <- cyt_gr[which(cyt_gr$context==contexts[cx]),]
-      data_gr$cytosineCount <- GenomicRanges::countOverlaps(data_gr, ref_gr)
-      dat.collect <- data_gr$cytosineCount
-
-      new.dat.collect <- length(which(dat.collect>=min.C))
-      non.empty.bins <- new.dat.collect/length(dat.collect)
-      mydf[,ncol(mydf) + 1] <- non.empty.bins
-      colnames(mydf)[ncol(mydf)] <- paste0(contexts[cx])
-      rm(dat.collect, new.dat.collect)
+      mybins[cx] <- win
+      names(mybins)[cx] <- contexts[cx]
     }
-    mydf.collect[[x1]] <- mydf
+
+    cat("----------------------------------------------------------------", "\n")
+    cat("Exporting regions ....","\n")
+    for (xx in seq_along(mybins)){
+      export.df <- collect.bins[which(names(collect.bins)==mybins[[xx]])]
+      export.bins(mylist=export.df, bin.context=names(mybins)[[xx]], mybin=mybins[[xx]], step=step.size, out.dir, genome)
+    }
+    return(list.files(out.dir, pattern=paste0(".*",genome,".*\\.Rdata$"), full.names=TRUE))
+    cat("done!", "\n")
   }
-  out <- rbindlist(mydf.collect)
-
-  if ("CG" %in% colnames(out)){
-    out.CG <- out[out$CG>=0.9]$bin.size
-    min.CG <- min(out.CG)
-  } else {
-    min.CG=NULL
-  }
-
-  if ("CHG" %in% colnames(out)){
-    out.CHG <- out[out$CHG>=0.9]$bin.size
-    min.CHG <- min(out.CHG)
-  } else {
-    min.CHG=NULL
-  }
-
-  if ("CHH" %in% colnames(out)){
-    out.CHH <- out[out$CHH>=0.9]$bin.size
-    min.CHH <- min(out.CHH)
-  } else {
-    min.CHH=NULL
-  }
-
-  mybins <- c(CG=min.CG, CHG=min.CHG, CHH=min.CHH)
-
-  cat("----------------------------------------------------------------", "\n")
-  cat("Exporting regions ....","\n")
-  for (xx in seq_along(mybins)){
-    export.df <- collect.bins[which(names(collect.bins)==mybins[[xx]])]
-    export.bins(mylist=export.df, bin.context=names(mybins)[[xx]], mybin=mybins[[xx]], out.dir, genome)
-  }
-  # return(list(CG=min.CG,
-  #             CHG=min.CHG,
-  #             CHH=min.CHH))
-  return(list.files(out.dir, pattern=paste0(".*",genome,".*\\.Rdata$"), full.names=TRUE))
-  cat("done!", "\n")
-
   # cat("----------------------------------------------------------------", "\n")
   # cat("Exporting regions ....","\n")
   # for (xx in seq_along(mybins)){
