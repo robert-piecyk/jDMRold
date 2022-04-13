@@ -115,15 +115,15 @@ binGenome <- function(fasta.file,
                       genome){
 
 
-  cyt.collect <- list()
-
+    cyt.collect <- list()
+  
   # all cytosine positions
   all.cyt.pos <- CfromFASTAv5(fasta=fasta.file)
   cyt_gr <- GRanges(seqnames=all.cyt.pos$chr,
                     ranges=IRanges(start=all.cyt.pos$pos, width=1),
                     context=all.cyt.pos$context,
                     strand=all.cyt.pos$strand)
-
+  
   # get length of chromosomes
   val <- c()
   f <- seqinr::read.fasta(fasta.file)
@@ -132,14 +132,15 @@ binGenome <- function(fasta.file,
     names(val)[x] <- gsub(">", "", seqinr::getAnnot(f[[x]]))
   }
   gr <- GRanges(seqnames=names(val), ranges=IRanges(start=1, end=val))
-
+  
   mydf.collect <- list()
   collect.bins <- list()
-
+  
   mybins <- c()
   if (length(win)>1){
+    cat("No bin size specified. Automatically determining bin size!\n")
     for (x1 in seq_along(win)){
-      cat("-------------------------", "\n")
+      cat("----------------------------------------------------------------", "\n")
       if (s.window==TRUE){
         step.size <- win[x1]/2
         binned.g <- slidingWindows(gr, width = win[x1], step = step.size)
@@ -154,27 +155,27 @@ binGenome <- function(fasta.file,
       names(dd)[2] <- "start"
       names(dd)[3] <- "end"
       names(dd)[4] <- "cluster.length"
-
+      
       new <- list(dd)
       names(new) <- as.numeric(as.character(win[x1]))
       #names(new) <- "reg.obs"
       collect.bins <- append(collect.bins, new)
       #dput(new, out.name)
-
+      
       # tmp_reg <- new
       # data <- as.data.frame(tmp_reg$reg.obs)
       data_gr <- GRanges(seqnames=dd$chr,
                          ranges=IRanges(start=dd$start, end=dd$end),
                          clusterlen=dd$cluster.length)
-
+      
       mydf <- data.frame(bin.size=win[x1])
-
+      
       for (cx in seq_along(contexts)){
         cat("Extracting cytosines for ", contexts[cx], "\n")
         ref_gr <- cyt_gr[which(cyt_gr$context==contexts[cx]),]
         data_gr$cytosineCount <- GenomicRanges::countOverlaps(data_gr, ref_gr)
         dat.collect <- data_gr$cytosineCount
-
+        
         new.dat.collect <- length(which(dat.collect>=min.C))
         non.empty.bins <- new.dat.collect/length(dat.collect)
         mydf[,ncol(mydf) + 1] <- non.empty.bins
@@ -184,21 +185,21 @@ binGenome <- function(fasta.file,
       mydf.collect[[x1]] <- mydf
     }
     out <- rbindlist(mydf.collect)
-
+    
     if ("CG" %in% colnames(out)){
       out.CG <- out[out$CG>=0.9]$bin.size
       min.CG <- min(out.CG)
     } else {
       min.CG=NULL
     }
-
+    
     if ("CHG" %in% colnames(out)){
       out.CHG <- out[out$CHG>=0.9]$bin.size
       min.CHG <- min(out.CHG)
     } else {
       min.CHG=NULL
     }
-
+    
     if ("CHH" %in% colnames(out)){
       out.CHH <- out[out$CHH>=0.9]$bin.size
       min.CHH <- min(out.CHH)
@@ -206,17 +207,22 @@ binGenome <- function(fasta.file,
       min.CHH=NULL
     }
     mybins <- c(CG=min.CG, CHG=min.CHG, CHH=min.CHH)
-
+    
     cat("----------------------------------------------------------------", "\n")
     cat("Exporting regions ....","\n")
     for (xx in seq_along(mybins)){
       export.df <- collect.bins[which(names(collect.bins)==mybins[[xx]])]
-      export.bins(mylist=export.df, bin.context=names(mybins)[[xx]], mybin=mybins[[xx]], step=step.size, out.dir, genome)
+      if (s.window==TRUE){
+        export.bins(mylist=export.df, bin.context=names(mybins)[[xx]], mybin=mybins[[xx]], step=mybins[[xx]]/2, out.dir, genome)
+      } else {
+        export.bins(mylist=export.df, bin.context=names(mybins)[[xx]], mybin=mybins[[xx]], step=mybins[[xx]], out.dir, genome)
+      }
     }
     return(list.files(out.dir, pattern=paste0(".*",genome,".*\\.Rdata$"), full.names=TRUE))
     cat("done!", "\n")
   } else {
-    cat("-------------------------", "\n")
+    cat("----------------------------------------------------------------", "\n")
+    # User input bin size
     if (s.window==TRUE){
       step.size <- win/2
       binned.g <- slidingWindows(gr, width = win, step = step.size)
@@ -231,7 +237,7 @@ binGenome <- function(fasta.file,
     names(dd)[2] <- "start"
     names(dd)[3] <- "end"
     names(dd)[4] <- "cluster.length"
-
+    
     new <- list(dd)
     names(new) <- as.numeric(as.character(win))
     #names(new) <- "reg.obs"
@@ -241,12 +247,16 @@ binGenome <- function(fasta.file,
       mybins[cx] <- win
       names(mybins)[cx] <- contexts[cx]
     }
-
+    
     cat("----------------------------------------------------------------", "\n")
     cat("Exporting regions ....","\n")
     for (xx in seq_along(mybins)){
       export.df <- collect.bins[which(names(collect.bins)==mybins[[xx]])]
-      export.bins(mylist=export.df, bin.context=names(mybins)[[xx]], mybin=mybins[[xx]], step=step.size, out.dir, genome)
+      if (s.window==TRUE){
+        export.bins(mylist=export.df, bin.context=names(mybins)[[xx]], mybin=mybins[[xx]], step=mybins[[xx]]/2, out.dir, genome)
+      } else {
+        export.bins(mylist=export.df, bin.context=names(mybins)[[xx]], mybin=mybins[[xx]], step=mybins[[xx]], out.dir, genome)
+      }
     }
     return(list.files(out.dir, pattern=paste0(".*",genome,".*\\.Rdata$"), full.names=TRUE))
     cat("done!", "\n")
